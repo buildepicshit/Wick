@@ -94,7 +94,13 @@ Wick is a clean-room reimplementation inspired by [GoPeak](https://github.com/Ha
 
 We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a PR.
 
-## How It Works
+## Demo
+
+Clone the repo and open [`docs/demo/player.html`](docs/demo/player.html) in a browser to watch the demo, or play the cast file directly:
+
+```bash
+asciinema play docs/demo/wick-demo.cast
+```
 
 <details>
 <summary>Before/after — 8 turns vs 1</summary>

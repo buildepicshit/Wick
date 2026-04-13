@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Wick v0.1.0 Demo</title>
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/asciinema-player@3.9.0/dist/bundle/asciinema-player.css" />
+  <style>
+    body {
+      background: #0d1117;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: #c9d1d9;
+    }
+    h1 { margin-bottom: 0.5em; }
+    p { color: #8b949e; margin-bottom: 1.5em; }
+    a { color: #58a6ff; }
+    #player { width: 720px; }
+  </style>
+</head>
+<body>
+  <h1>Wick v0.1.0</h1>
+  <p>Roslyn-enriched C# exception telemetry for Godot Engine, exposed over MCP</p>
+  <div id="player"></div>
+  <p style="margin-top: 1em;"><a href="https://github.com/buildepicshit/Wick">github.com/buildepicshit/Wick</a></p>
+  <script src="https://unpkg.com/asciinema-player@3.9.0/dist/bundle/asciinema-player.min.js"></script>
+  <script>
+    AsciinemaPlayer.create('wick-demo.cast', document.getElementById('player'), {
+      theme: 'monokai',
+      fit: 'width',
+      autoPlay: true,
+      speed: 1.2,
+      cols: 80,
+      rows: 30
+    });
+  </script>
+</body>
+</html>
