@@ -2,13 +2,13 @@
 
 **Document type:** Planning — tracks the phased path from current state to the `Wick-public` OSS launch.
 **Last updated:** 2026-04-11
-**Status:** Active — Phase 1 in progress.
+**Status:** Phases 1–4 complete. Phase 2 (dogfooding) in progress per [`STATUS.md`](../../STATUS.md).
 
 ## Purpose
 
-This document is the single source of truth for *where Wick is going next and in what order*. It supersedes the older `SharpPeak v1 vision spec` which was written under the old scope ("best C# Godot MCP server") and before today's strategic audit from Brynja (`studio-comms/inbox/sharppeak-team/2026-04-11-1600-landscape-audit-and-recommendations.md`).
+This document is the single source of truth for *where Wick is going next and in what order*. It was written on 2026-04-11 after a strategic audit that narrowed Wick's scope.
 
-The scope changed today: Wick's value proposition is **Roslyn-enriched C# runtime exception telemetry for Godot, exposed over MCP**. Scene manipulation parity with GoPeak is explicitly not a goal — the competitive landscape audit confirmed we cannot win that axis and neither Floom nor Useful Idiots needs it. The moat is the exception pipeline + Roslyn enrichment, and the second half of that moat is the `Wick.Runtime` in-process companion NuGet (Sub-spec F), which is being promoted ahead of the deferred scene work.
+Wick's value proposition is **Roslyn-enriched C# runtime exception telemetry for Godot, exposed over MCP**. Scene manipulation parity with other Godot MCP servers is explicitly not a goal — the competitive landscape audit confirmed we cannot win that axis and neither of our internal dogfood targets needs it. The moat is the exception pipeline + Roslyn enrichment, and the second half of that moat is the `Wick.Runtime` in-process companion NuGet (Sub-spec F), which was promoted ahead of the deferred scene work.
 
 `STATUS.md` points at this document for the detailed roadmap and carries only the current-phase snapshot.
 
@@ -55,7 +55,7 @@ The scope changed today: Wick's value proposition is **Roslyn-enriched C# runtim
 
 ### Phase 4 — Public flip
 
-**Goal:** Wick exists publicly as a fresh `Wick-public` repository with clean history. The internal `buildepicshit/SharpPeak` repo is retired as a historical private artifact.
+**Goal:** Wick exists publicly as a fresh repository with clean history. The internal pre-launch dev repo is archived as a read-only historical artifact.
 
 | Step | Scope |
 |---|---|
