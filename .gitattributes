@@ -65,3 +65,11 @@
 *.dll       binary
 *.exe       binary
 *.pdb       binary
+
+# Godot Asset Library: only ship /addons/ in the zip fetched from
+# github.com/.../archive/<ref>.zip. The MCP server lives outside /addons/
+# and is installed separately per README.
+# Ref: https://docs.godotengine.org/en/stable/community/asset_library/submitting_to_assetlib.html
+/**        export-ignore
+/addons    !export-ignore
+/addons/** !export-ignore

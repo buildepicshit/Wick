@@ -30,6 +30,12 @@ Other Godot MCP servers (like the excellent [GoPeak](https://github.com/HaD0Yun/
 
 ### Installation
 
+Wick has two parts: a Godot-side bridge addon (`/addons/wick/`) and the .NET MCP server.
+
+**Godot bridge** — install via the Godot Asset Library in-editor (recommended), or copy `/addons/wick/` into your project manually.
+
+**MCP server** — clone and build:
+
     git clone https://github.com/buildepicshit/Wick.git
     cd Wick
     dotnet build Wick.slnx --configuration Release
