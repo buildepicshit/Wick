@@ -1,3 +1,5 @@
+<a href="https://github.com/buildepicshit"><img src=".github/bes-studios-mark.png" width="72" align="right" alt="A BES Studios project"/></a>
+
 # Wick
 
 **Roslyn-enriched C# exception telemetry for Godot Engine, exposed over MCP.**
