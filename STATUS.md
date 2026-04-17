@@ -4,8 +4,8 @@ phase: phase-2-dogfooding
 last_shipped: 2026-04-16
 last_updated: 2026-04-16T12:30-07:00
 tests:
-  total: 219
-  passing: 219
+  total: 220
+  passing: 220
   failing: 0
 blockers: []
 next_milestone: Phase 2 dogfooding — Floom + UsefulIdiots integration validation
@@ -50,10 +50,10 @@ Phase 2 validates Wick against two dogfood targets — **Floom** and **UsefulIdi
 
 | Metric | Value |
 |---|---|
-| Unit tests | 207 (`Wick.Tests.Unit`) |
+| Unit tests | 208 (`Wick.Tests.Unit`) |
 | Integration tests | 12 (`Wick.Tests.Integration`) |
-| **Total** | **219** |
-| Passing | 219 (100%) |
+| **Total** | **220** |
+| Passing | 220 (100%) |
 | Failing | 0 |
 | Skipped | 0 |
 | Build warnings | 0 (`TreatWarningsAsErrors=true` repo-wide) |
