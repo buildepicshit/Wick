@@ -244,7 +244,18 @@ public sealed class CSharpLspClient : IDisposable
                 }
             }
         }
-        catch { }
+        catch (OperationCanceledException)
+        {
+            // Expected during shutdown.
+        }
+        catch (Exception ex) when (ex is IOException or ObjectDisposedException)
+        {
+            // Expected on disconnect (csharp-ls exited, stdout pipe closed).
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[CSharpLsp] Receive loop terminated unexpectedly: {ex.GetType().Name}: {ex.Message}");
+        }
         finally { Disconnect(); }
     }
 

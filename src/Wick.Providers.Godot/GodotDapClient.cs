@@ -163,9 +163,17 @@ public sealed class GodotDapClient : IDisposable
                 }
             }
         }
-        catch (Exception)
+        catch (OperationCanceledException)
         {
-            // Expected on disconnect
+            // Expected during shutdown.
+        }
+        catch (Exception ex) when (ex is IOException or ObjectDisposedException or SocketException)
+        {
+            // Expected on disconnect (Godot DAP server closed).
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[DAP] Receive loop terminated unexpectedly: {ex.GetType().Name}: {ex.Message}");
         }
         finally
         {
