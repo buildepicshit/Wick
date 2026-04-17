@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Text.Json;
+using ModelContextProtocol;
 using ModelContextProtocol.Server;
 
 namespace Wick.Providers.Godot;
@@ -46,11 +47,8 @@ public static class GodotTools
     [McpServerTool, Description("Reads detailed info about a specific Godot project from its project.godot file path.")]
     public static string ProjectInfo(string projectGodotPath)
     {
-        var project = ProjectDiscovery.ReadProject(projectGodotPath);
-        if (project is null)
-        {
-            return JsonSerializer.Serialize(new { error = $"No project.godot found at: {projectGodotPath}" });
-        }
+        var project = ProjectDiscovery.ReadProject(projectGodotPath)
+            ?? throw new McpException($"No project.godot found at: {projectGodotPath}");
 
         return JsonSerializer.Serialize(new
         {
@@ -68,7 +66,7 @@ public static class GodotTools
     {
         if (!File.Exists(scenePath))
         {
-            return JsonSerializer.Serialize(new { error = $"Scene file not found: {scenePath}" });
+            throw new McpException($"Scene file not found: {scenePath}");
         }
 
         var content = File.ReadAllText(scenePath);
@@ -97,7 +95,7 @@ public static class GodotTools
     {
         if (!Directory.Exists(projectPath))
         {
-            return JsonSerializer.Serialize(new { error = $"Directory not found: {projectPath}" });
+            throw new McpException($"Directory not found: {projectPath}");
         }
 
         var scenes = Directory.GetFiles(projectPath, "*.tscn", SearchOption.AllDirectories)
@@ -113,7 +111,7 @@ public static class GodotTools
     {
         if (!Directory.Exists(projectPath))
         {
-            return JsonSerializer.Serialize(new { error = $"Directory not found: {projectPath}" });
+            throw new McpException($"Directory not found: {projectPath}");
         }
 
         var gdScripts = Directory.GetFiles(projectPath, "*.gd", SearchOption.AllDirectories)
