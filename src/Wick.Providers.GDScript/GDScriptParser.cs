@@ -14,8 +14,15 @@ public static partial class GDScriptParser
     /// </summary>
     public static GDScriptInfo Parse(string content)
     {
-        var info = new GDScriptInfo();
         var lines = content.Split('\n');
+
+        string? className = null;
+        string? extends = null;
+        var functions = new List<GDFunction>();
+        var signals = new List<GDSignal>();
+        var variables = new List<GDVariable>();
+        var constants = new List<GDConstant>();
+        var enums = new List<GDEnumDeclaration>();
 
         for (var i = 0; i < lines.Length; i++)
         {
@@ -33,7 +40,7 @@ public static partial class GDScriptParser
             var classMatch = ClassNameRegex().Match(trimmed);
             if (classMatch.Success)
             {
-                info.ClassName = classMatch.Groups[1].Value;
+                className = classMatch.Groups[1].Value;
                 continue;
             }
 
@@ -41,7 +48,7 @@ public static partial class GDScriptParser
             var extendsMatch = ExtendsRegex().Match(trimmed);
             if (extendsMatch.Success)
             {
-                info.Extends = extendsMatch.Groups[1].Value;
+                extends = extendsMatch.Groups[1].Value;
                 continue;
             }
 
@@ -49,7 +56,7 @@ public static partial class GDScriptParser
             var signalMatch = SignalRegex().Match(trimmed);
             if (signalMatch.Success)
             {
-                info.Signals.Add(new GDSignal
+                signals.Add(new GDSignal
                 {
                     Name = signalMatch.Groups[1].Value,
                     Parameters = signalMatch.Groups[2].Value.Trim(),
@@ -62,7 +69,7 @@ public static partial class GDScriptParser
             var exportMatch = ExportVarRegex().Match(trimmed);
             if (exportMatch.Success)
             {
-                info.Variables.Add(new GDVariable
+                variables.Add(new GDVariable
                 {
                     Name = exportMatch.Groups[2].Value,
                     Type = exportMatch.Groups[3].Success ? exportMatch.Groups[3].Value : null,
@@ -77,7 +84,7 @@ public static partial class GDScriptParser
             var onreadyMatch = OnreadyVarRegex().Match(trimmed);
             if (onreadyMatch.Success)
             {
-                info.Variables.Add(new GDVariable
+                variables.Add(new GDVariable
                 {
                     Name = onreadyMatch.Groups[1].Value,
                     Type = onreadyMatch.Groups[2].Success ? onreadyMatch.Groups[2].Value : null,
@@ -91,7 +98,7 @@ public static partial class GDScriptParser
             var varMatch = VarRegex().Match(trimmed);
             if (varMatch.Success)
             {
-                info.Variables.Add(new GDVariable
+                variables.Add(new GDVariable
                 {
                     Name = varMatch.Groups[1].Value,
                     Type = varMatch.Groups[2].Success ? varMatch.Groups[2].Value : null,
@@ -104,7 +111,7 @@ public static partial class GDScriptParser
             var constMatch = ConstRegex().Match(trimmed);
             if (constMatch.Success)
             {
-                info.Constants.Add(new GDConstant
+                constants.Add(new GDConstant
                 {
                     Name = constMatch.Groups[1].Value,
                     Value = constMatch.Groups[2].Value,
@@ -117,7 +124,7 @@ public static partial class GDScriptParser
             var enumMatch = EnumRegex().Match(trimmed);
             if (enumMatch.Success)
             {
-                info.Enums.Add(new GDEnumDeclaration
+                enums.Add(new GDEnumDeclaration
                 {
                     Name = enumMatch.Groups[1].Value,
                     Line = lineNumber,
@@ -130,7 +137,7 @@ public static partial class GDScriptParser
             if (funcMatch.Success)
             {
                 var funcName = funcMatch.Groups[1].Value;
-                info.Functions.Add(new GDFunction
+                functions.Add(new GDFunction
                 {
                     Name = funcName,
                     Parameters = funcMatch.Groups[2].Value.Trim(),
@@ -143,7 +150,16 @@ public static partial class GDScriptParser
             }
         }
 
-        return info;
+        return new GDScriptInfo
+        {
+            ClassName = className,
+            Extends = extends,
+            Functions = functions,
+            Signals = signals,
+            Variables = variables,
+            Constants = constants,
+            Enums = enums,
+        };
     }
 
     [GeneratedRegex(@"^class_name\s+(\w+)")]
@@ -176,13 +192,13 @@ public static partial class GDScriptParser
 
 public sealed class GDScriptInfo
 {
-    public string? ClassName { get; set; }
-    public string? Extends { get; set; }
-    public List<GDFunction> Functions { get; } = [];
-    public List<GDSignal> Signals { get; } = [];
-    public List<GDVariable> Variables { get; } = [];
-    public List<GDConstant> Constants { get; } = [];
-    public List<GDEnumDeclaration> Enums { get; } = [];
+    public string? ClassName { get; init; }
+    public string? Extends { get; init; }
+    public IReadOnlyList<GDFunction> Functions { get; init; } = [];
+    public IReadOnlyList<GDSignal> Signals { get; init; } = [];
+    public IReadOnlyList<GDVariable> Variables { get; init; } = [];
+    public IReadOnlyList<GDConstant> Constants { get; init; } = [];
+    public IReadOnlyList<GDEnumDeclaration> Enums { get; init; } = [];
 }
 
 public sealed class GDFunction

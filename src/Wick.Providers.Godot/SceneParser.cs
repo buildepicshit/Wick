@@ -16,8 +16,11 @@ public static partial class SceneParser
     /// </summary>
     public static SceneInfo Parse(string tscnContent)
     {
-        var scene = new SceneInfo();
         var lines = tscnContent.Split('\n');
+
+        var formatVersion = 0;
+        var nodes = new List<SceneNode>();
+        var externalResources = new List<ExternalResource>();
 
         string? currentSection = null;
         string? currentNodeName = null;
@@ -35,7 +38,7 @@ public static partial class SceneParser
                 // Save previous node if any
                 if (currentSection == "node" && currentNodeName is not null)
                 {
-                    scene.Nodes.Add(new SceneNode
+                    nodes.Add(new SceneNode
                     {
                         Name = currentNodeName,
                         Type = currentNodeType ?? "Unknown",
@@ -55,7 +58,7 @@ public static partial class SceneParser
                     var formatMatch = FormatVersionRegex().Match(line);
                     if (formatMatch.Success)
                     {
-                        scene.FormatVersion = int.Parse(formatMatch.Groups[1].Value, CultureInfo.InvariantCulture);
+                        formatVersion = int.Parse(formatMatch.Groups[1].Value, CultureInfo.InvariantCulture);
                     }
                 }
                 else if (line.StartsWith("[node", StringComparison.Ordinal))
@@ -76,7 +79,7 @@ public static partial class SceneParser
                     var typeMatch = TypeRegex().Match(line);
                     if (pathMatch.Success)
                     {
-                        scene.ExternalResources.Add(new ExternalResource
+                        externalResources.Add(new ExternalResource
                         {
                             Path = pathMatch.Groups[1].Value,
                             Type = typeMatch.Success ? typeMatch.Groups[1].Value : "Unknown",
@@ -104,7 +107,7 @@ public static partial class SceneParser
         // Save last node
         if (currentSection == "node" && currentNodeName is not null)
         {
-            scene.Nodes.Add(new SceneNode
+            nodes.Add(new SceneNode
             {
                 Name = currentNodeName,
                 Type = currentNodeType ?? "Unknown",
@@ -113,7 +116,12 @@ public static partial class SceneParser
             });
         }
 
-        return scene;
+        return new SceneInfo
+        {
+            FormatVersion = formatVersion,
+            Nodes = nodes,
+            ExternalResources = externalResources,
+        };
     }
 
     /// <summary>
@@ -170,9 +178,9 @@ public static partial class SceneParser
 
 public sealed class SceneInfo
 {
-    public int FormatVersion { get; set; }
-    public List<SceneNode> Nodes { get; } = [];
-    public List<ExternalResource> ExternalResources { get; } = [];
+    public int FormatVersion { get; init; }
+    public IReadOnlyList<SceneNode> Nodes { get; init; } = [];
+    public IReadOnlyList<ExternalResource> ExternalResources { get; init; } = [];
 }
 
 public sealed class SceneNode
@@ -180,7 +188,7 @@ public sealed class SceneNode
     public required string Name { get; init; }
     public required string Type { get; init; }
     public string? Parent { get; init; }
-    public Dictionary<string, string> Properties { get; init; } = [];
+    public IReadOnlyDictionary<string, string> Properties { get; init; } = new Dictionary<string, string>();
 }
 
 public sealed class ExternalResource
