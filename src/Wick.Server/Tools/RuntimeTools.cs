@@ -17,19 +17,22 @@ public sealed class RuntimeTools
     private readonly GameProcessManager _gameProcess;
     private readonly ActiveGroups _activeGroups;
     private readonly IGameLauncher _launcher;
+    private readonly IGodotBridgeManagerAccessor? _bridgeAccessor;
 
     public RuntimeTools(
         ExceptionBuffer exceptionBuffer,
         LogBuffer logBuffer,
         GameProcessManager gameProcess,
         ActiveGroups activeGroups,
-        IGameLauncher launcher)
+        IGameLauncher launcher,
+        IGodotBridgeManagerAccessor? bridgeAccessor = null)
     {
         _exceptionBuffer = exceptionBuffer;
         _logBuffer = logBuffer;
         _gameProcess = gameProcess;
         _activeGroups = activeGroups;
         _launcher = launcher;
+        _bridgeAccessor = bridgeAccessor;
     }
 
     [McpServerTool, Description(
@@ -41,7 +44,7 @@ public sealed class RuntimeTools
         return new RuntimeStatusResult(
             GameRunning: gameStatus.IsRunning,
             Pid: gameStatus.Pid,
-            EditorConnected: false,
+            EditorConnected: _bridgeAccessor?.IsEditorConnected ?? false,
             ExceptionCount: _exceptionBuffer.Count,
             LogLineCount: _logBuffer.Count,
             ActiveGroups: _activeGroups.Groups.OrderBy(g => g).ToList());
