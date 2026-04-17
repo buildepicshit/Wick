@@ -42,7 +42,7 @@ public sealed class BuildTools
         ValidateConfiguration(configuration);
         var sw = Stopwatch.StartNew();
         var result = await _cli.RunAsync(
-            $"build \"{projectPath}\" --configuration {configuration}",
+            ["build", projectPath, "--configuration", configuration],
             Path.GetDirectoryName(projectPath) ?? ".",
             timeoutSeconds: 120,
             cancellationToken).ConfigureAwait(false);
@@ -62,11 +62,13 @@ public sealed class BuildTools
         CancellationToken cancellationToken = default)
     {
         ValidateConfiguration(configuration);
+        if (filter is not null) ValidateFilter(filter);
         var sw = Stopwatch.StartNew();
-        var args = $"test \"{projectPath}\" --configuration {configuration}";
+        var args = new List<string> { "test", projectPath, "--configuration", configuration };
         if (filter is not null)
         {
-            args += $" --filter \"{filter}\"";
+            args.Add("--filter");
+            args.Add(filter);
         }
         var result = await _cli.RunAsync(
             args,
@@ -87,7 +89,7 @@ public sealed class BuildTools
     {
         var sw = Stopwatch.StartNew();
         var result = await _cli.RunAsync(
-            $"clean \"{projectPath}\"",
+            ["clean", projectPath],
             Path.GetDirectoryName(projectPath) ?? ".",
             cancellationToken: cancellationToken).ConfigureAwait(false);
         sw.Stop();
@@ -112,7 +114,7 @@ public sealed class BuildTools
         ValidateConfiguration(configuration);
         var sw = Stopwatch.StartNew();
         var result = await _cli.RunAsync(
-            $"build \"{projectPath}\" --configuration {configuration}",
+            ["build", projectPath, "--configuration", configuration],
             Path.GetDirectoryName(projectPath) ?? ".",
             timeoutSeconds: 120,
             cancellationToken).ConfigureAwait(false);
@@ -145,10 +147,11 @@ public sealed class BuildTools
     {
         ValidatePackageName(packageName);
         if (version is not null) ValidateVersion(version);
-        var args = $"add \"{projectPath}\" package {packageName}";
+        var args = new List<string> { "add", projectPath, "package", packageName };
         if (version is not null)
         {
-            args += $" --version {version}";
+            args.Add("--version");
+            args.Add(version);
         }
 
         var result = await _cli.RunAsync(
@@ -158,7 +161,7 @@ public sealed class BuildTools
 
         return JsonSerializer.Serialize(new
         {
-            command = $"dotnet {args}",
+            command = $"dotnet {string.Join(' ', args)}",
             success = result.Success,
             output = result.Output,
             errors = result.Error,
@@ -172,16 +175,18 @@ public sealed class BuildTools
         CancellationToken cancellationToken = default)
     {
         ValidatePackageName(packageName);
+        var args = new List<string> { "remove", projectPath, "package", packageName };
         var result = await _cli.RunAsync(
-            $"remove \"{projectPath}\" package {packageName}",
+            args,
             Path.GetDirectoryName(projectPath) ?? ".",
             cancellationToken: cancellationToken).ConfigureAwait(false);
 
         return JsonSerializer.Serialize(new
         {
-            command = $"dotnet remove \"{projectPath}\" package {packageName}",
+            command = $"dotnet {string.Join(' ', args)}",
             success = result.Success,
             output = result.Output,
+            errors = result.Error,
         }, JsonOptions);
     }
 
@@ -191,10 +196,10 @@ public sealed class BuildTools
         [Description("When true, query the --outdated list.")] bool showOutdated = false,
         CancellationToken cancellationToken = default)
     {
-        var args = $"list \"{projectPath}\" package";
+        var args = new List<string> { "list", projectPath, "package" };
         if (showOutdated)
         {
-            args += " --outdated";
+            args.Add("--outdated");
         }
 
         var result = await _cli.RunAsync(
@@ -204,9 +209,10 @@ public sealed class BuildTools
 
         return JsonSerializer.Serialize(new
         {
-            command = $"dotnet {args}",
+            command = $"dotnet {string.Join(' ', args)}",
             success = result.Success,
             output = result.Output,
+            errors = result.Error,
         }, JsonOptions);
     }
 
@@ -292,6 +298,12 @@ public sealed class BuildTools
     private static readonly Regex ValidVersion =
         new(@"^[0-9A-Za-z.*+-]+$", RegexOptions.Compiled);
 
+    // Test filter: xUnit/NUnit syntax allows method/class names, operators, quotes, and
+    // logical operators. Reject embedded newlines and NUL — both would break the dotnet
+    // CLI's own argument parser. Everything else passes through ArgumentList untouched.
+    private static readonly Regex ValidFilter =
+        new(@"^[^\x00\r\n]+$", RegexOptions.Compiled);
+
     private static void ValidateConfiguration(string configuration)
     {
         if (!ValidConfigurations.Contains(configuration))
@@ -308,6 +320,12 @@ public sealed class BuildTools
     {
         if (!ValidVersion.IsMatch(version))
             throw new ArgumentException($"Invalid version '{version}'. Must match semver pattern.");
+    }
+
+    private static void ValidateFilter(string filter)
+    {
+        if (!ValidFilter.IsMatch(filter))
+            throw new ArgumentException($"Invalid filter: must not contain control characters or newlines.");
     }
 }
 

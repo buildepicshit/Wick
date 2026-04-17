@@ -17,9 +17,9 @@ public sealed class BuildToolsTests
         private readonly CliResult _result;
         public StubCli(CliResult result) { _result = result; }
         public int CallCount { get; private set; }
-        public string? LastArgs { get; private set; }
+        public IReadOnlyList<string>? LastArgs { get; private set; }
 
-        public Task<CliResult> RunAsync(string arguments, string workingDirectory, int timeoutSeconds = 120, CancellationToken cancellationToken = default)
+        public Task<CliResult> RunAsync(IReadOnlyList<string> arguments, string workingDirectory, int timeoutSeconds = 120, CancellationToken cancellationToken = default)
         {
             CallCount++;
             LastArgs = arguments;

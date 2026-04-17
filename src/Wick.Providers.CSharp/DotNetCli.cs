@@ -9,9 +9,14 @@ namespace Wick.Providers.CSharp;
 /// (<see cref="DotNetCli"/>.RunAsync wrapped by <see cref="DefaultDotNetCli"/>) shells out;
 /// tests supply a canned <see cref="CliResult"/>.
 /// </summary>
+/// <remarks>
+/// Arguments are passed as a list and forwarded to <see cref="ProcessStartInfo.ArgumentList"/>
+/// — this avoids argument-injection holes where user-controlled paths or flags contain
+/// quotes, spaces, or shell metacharacters.
+/// </remarks>
 public interface IDotNetCli
 {
-    Task<CliResult> RunAsync(string arguments, string workingDirectory, int timeoutSeconds = 120, CancellationToken cancellationToken = default);
+    Task<CliResult> RunAsync(IReadOnlyList<string> arguments, string workingDirectory, int timeoutSeconds = 120, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -19,7 +24,7 @@ public interface IDotNetCli
 /// </summary>
 public sealed class DefaultDotNetCli : IDotNetCli
 {
-    public Task<CliResult> RunAsync(string arguments, string workingDirectory, int timeoutSeconds = 120, CancellationToken cancellationToken = default)
+    public Task<CliResult> RunAsync(IReadOnlyList<string> arguments, string workingDirectory, int timeoutSeconds = 120, CancellationToken cancellationToken = default)
         => DotNetCli.RunAsync(arguments, workingDirectory, timeoutSeconds, cancellationToken);
 }
 
@@ -29,24 +34,34 @@ public sealed class DefaultDotNetCli : IDotNetCli
 public static class DotNetCli
 {
     /// <summary>
+    /// Soft cap on the stdout/stderr capture buffer per stream. Build output past this
+    /// size is discarded with a truncation marker — a malicious or runaway build should
+    /// not OOM the MCP server.
+    /// </summary>
+    internal const int MaxCapturedBytes = 4 * 1024 * 1024;
+
+    /// <summary>
     /// Runs a dotnet CLI command and returns the result.
     /// </summary>
-    public static async Task<CliResult> RunAsync(string arguments, string workingDirectory, int timeoutSeconds = 120, CancellationToken cancellationToken = default)
+    public static async Task<CliResult> RunAsync(IReadOnlyList<string> arguments, string workingDirectory, int timeoutSeconds = 120, CancellationToken cancellationToken = default)
     {
         var psi = new ProcessStartInfo
         {
             FileName = "dotnet",
-            Arguments = arguments,
             WorkingDirectory = workingDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true,
         };
+        foreach (var arg in arguments)
+        {
+            psi.ArgumentList.Add(arg);
+        }
 
         using var process = new Process { StartInfo = psi };
-        var stdout = new StringBuilder();
-        var stderr = new StringBuilder();
+        var stdout = new BoundedStringBuffer(MaxCapturedBytes);
+        var stderr = new BoundedStringBuffer(MaxCapturedBytes);
 
         process.OutputDataReceived += (_, e) => { if (e.Data is not null) stdout.AppendLine(e.Data); };
         process.ErrorDataReceived += (_, e) => { if (e.Data is not null) stderr.AppendLine(e.Data); };
@@ -80,6 +95,34 @@ public static class DotNetCli
             Output = stdout.ToString(),
             Error = stderr.ToString(),
         };
+    }
+
+    /// <summary>
+    /// StringBuilder-like accumulator that caps total captured bytes. Once the cap is
+    /// hit, further writes are discarded and a single truncation marker is appended.
+    /// </summary>
+    private sealed class BoundedStringBuffer
+    {
+        private readonly StringBuilder _sb = new();
+        private readonly int _cap;
+        private bool _truncated;
+
+        public BoundedStringBuffer(int capBytes) { _cap = capBytes; }
+
+        public void AppendLine(string line)
+        {
+            if (_truncated) return;
+            // +1 for the newline AppendLine will add
+            if (_sb.Length + line.Length + 1 > _cap)
+            {
+                _sb.AppendLine($"[...output truncated — exceeded {_cap / (1024 * 1024)} MB cap]");
+                _truncated = true;
+                return;
+            }
+            _sb.AppendLine(line);
+        }
+
+        public override string ToString() => _sb.ToString();
     }
 }
 
