@@ -147,12 +147,6 @@ public abstract class HeaderDelimitedRpcClient : IDisposable
             Rpc = null;
         }
 
-        if (this.GetType().Name == "CSharpLspClient")
-        {
-            // Just reflection hack to get process in base class for debugging easily or use virtual
-             Console.Error.WriteLine("[Debug] Disconnecting. Did csharp-ls process exit?");
-        }
-
         NetworkStream?.Dispose();
         NetworkStream = null;
 
