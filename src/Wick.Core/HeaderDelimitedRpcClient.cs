@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Sockets;
+using Microsoft.Extensions.Logging;
 using StreamJsonRpc;
 using System.Text.Json;
 
@@ -8,12 +10,13 @@ namespace Wick.Core;
 /// A robust JSON-RPC client over TCP that uses HTTP-like framing (Content-Length: ...).
 /// Powered by Microsoft's StreamJsonRpc for industry-standard LSP and DAP communication.
 /// </summary>
-public abstract class HeaderDelimitedRpcClient : IDisposable
+public abstract partial class HeaderDelimitedRpcClient : IDisposable
 {
     protected TcpClient? TcpClient { get; set; }
     protected NetworkStream? NetworkStream { get; set; }
     protected JsonRpc? Rpc { get; set; }
     protected object RpcTarget { get; }
+    protected ILogger? Logger { get; }
     private Stream? _readStream;
     private Stream? _writeStream;
     private bool _disposed;
@@ -24,11 +27,23 @@ public abstract class HeaderDelimitedRpcClient : IDisposable
     /// Initializes the client with a target object that will handle incoming Server Notifications / Requests.
     /// Methods on the target object should be marked with [JsonRpcMethod("method/name")].
     /// </summary>
-    /// <param name="rpcTarget">The object to handle incoming messages</param>
-    protected HeaderDelimitedRpcClient(object rpcTarget)
+    /// <param name="rpcTarget">The object to handle incoming messages.</param>
+    /// <param name="logger">Optional logger for transport-level diagnostics. When null, transport failures are silent.</param>
+    protected HeaderDelimitedRpcClient(object rpcTarget, ILogger? logger = null)
     {
         RpcTarget = rpcTarget;
+        Logger = logger;
     }
+
+    [LoggerMessage(EventId = 400, Level = LogLevel.Warning, Message = "LSP/DAP connection failed")]
+    private static partial void LogConnectionFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 401, Level = LogLevel.Warning, Message = "LSP/DAP RPC pump start failed")]
+    private static partial void LogRpcPumpStartFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 402, Level = LogLevel.Information,
+        Message = "LSP/DAP disconnected: {Reason} - {Description}")]
+    private static partial void LogDisconnected(ILogger logger, object reason, string? description);
 
     /// <summary>
     /// Connects to the specified host and port using TCP and starts the RPC pump.
@@ -47,7 +62,7 @@ public abstract class HeaderDelimitedRpcClient : IDisposable
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[LSP/DAP] Connection failed: {ex.Message}");
+            if (Logger is not null) LogConnectionFailed(Logger, ex);
             Disconnect();
             return false;
         }
@@ -92,7 +107,7 @@ public abstract class HeaderDelimitedRpcClient : IDisposable
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[LSP/DAP] RPC Pump start failed: {ex.Message}");
+            if (Logger is not null) LogRpcPumpStartFailed(Logger, ex);
             Disconnect();
             return false;
         }
@@ -131,9 +146,15 @@ public abstract class HeaderDelimitedRpcClient : IDisposable
         await Rpc.NotifyWithParameterObjectAsync(method, arguments);
     }
 
+    [SuppressMessage("Performance", "CA1873:Avoid potentially expensive logging",
+        Justification = "e.Reason and e.Description are simple property getters on the event args; " +
+                        "IsEnabled guard already short-circuits when logging is disabled.")]
     private void OnDisconnected(object? sender, JsonRpcDisconnectedEventArgs e)
     {
-        Console.Error.WriteLine($"[LSP/DAP] Disconnected: {e.Reason} - {e.Description}");
+        if (Logger is not null && Logger.IsEnabled(LogLevel.Information))
+        {
+            LogDisconnected(Logger, e.Reason, e.Description);
+        }
         Disconnect();
     }
 
