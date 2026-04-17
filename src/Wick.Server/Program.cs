@@ -77,7 +77,8 @@ var mcpBuilder = builder.Services
         options.ServerInfo = new()
         {
             Name = "wick",
-            Version = "0.3.0",
+            Version = System.Reflection.Assembly.GetExecutingAssembly()
+                .GetName().Version?.ToString(3) ?? "0.0.0",
         };
     })
     .WithStdioServerTransport();
