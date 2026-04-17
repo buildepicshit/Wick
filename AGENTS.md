@@ -30,7 +30,7 @@ dotnet build Wick.slnx --configuration Release && dotnet test Wick.slnx --config
 - **.NET 10 / C# 14 single-target `net10.0`.** `global.json` pins `10.0.201` with `rollForward: latestFeature` and `allowPrerelease: true`. Wick has no Godot runtime constraint because nothing it ships gets loaded into a Godot process — the Godot plugin is pure GDScript, the bridge is JSON-RPC over TCP. Do not multi-target. Do not downshift to `net8.0`.
 - **0 warnings, 0 failures.** `TreatWarningsAsErrors=true` is enforced repo-wide via `Directory.Build.props`. Any warning fails the build. This is not aspirational. Do not use `#pragma warning disable` or blanket `<NoWarn>` — fix the underlying issue. Narrow `<NoWarn>` for a specific diagnostic ID is acceptable only with a comment explaining why.
 - **xUnit v3 (3.2.2) with `Microsoft.NET.Test.Sdk` 18.4.0.** Unit tests live in `tests/Wick.Tests.Unit/`. Test classes follow a `ClassUnderTest_Method_ExpectedBehavior` naming convention. Use **FluentAssertions** for readable assertions (`result.Should().Be(expected)`) and **NSubstitute** for mocks. Tests must be deterministic — no network calls, no real file system side effects, no time-dependent behavior.
-- **Current test count:** 207 unit tests (`Wick.Tests.Unit`) + 12 integration tests (`Wick.Tests.Integration`), 219 total, all passing. See [`STATUS.md`](STATUS.md) for up-to-date counts.
+- **Current test count:** 208 unit tests (`Wick.Tests.Unit`) + 12 integration tests (`Wick.Tests.Integration`), 220 total, all passing. See [`STATUS.md`](STATUS.md) for up-to-date counts.
 
 ### Central package management
 
