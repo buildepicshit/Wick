@@ -1,3 +1,4 @@
+using Wick.Core;
 using Wick.Providers.CSharp;
 
 namespace Wick.Tests.Unit;
@@ -13,7 +14,7 @@ public sealed class BuildDiagnosticParserTests
 
         diagnostics.Should().ContainSingle();
         var d = diagnostics[0];
-        d.Severity.Should().Be("error");
+        d.Severity.Should().Be(BuildSeverity.Error);
         d.Code.Should().Be("CS0103");
         d.Message.Should().Be("The name 'Foo' does not exist in the current context");
         d.FilePath.Should().Be("/project/src/Player.cs");
@@ -30,7 +31,7 @@ public sealed class BuildDiagnosticParserTests
         var diagnostics = BuildDiagnosticParser.Parse(stdout);
 
         diagnostics.Should().ContainSingle();
-        diagnostics[0].Severity.Should().Be("warning");
+        diagnostics[0].Severity.Should().Be(BuildSeverity.Warning);
         diagnostics[0].Code.Should().Be("CS0168");
         diagnostics[0].Line.Should().Be(7);
     }
@@ -50,8 +51,8 @@ public sealed class BuildDiagnosticParserTests
 
         diagnostics.Should().HaveCount(3);
         diagnostics.Select(d => d.Code).Should().BeEquivalentTo(["CS0103", "CS1061", "CS0168"]);
-        diagnostics.Count(d => d.Severity == "error").Should().Be(2);
-        diagnostics.Count(d => d.Severity == "warning").Should().Be(1);
+        diagnostics.Count(d => d.Severity == BuildSeverity.Error).Should().Be(2);
+        diagnostics.Count(d => d.Severity == BuildSeverity.Warning).Should().Be(1);
     }
 
     [Fact]
@@ -63,7 +64,7 @@ public sealed class BuildDiagnosticParserTests
 
         diagnostics.Should().ContainSingle();
         var d = diagnostics[0];
-        d.Severity.Should().Be("error");
+        d.Severity.Should().Be(BuildSeverity.Error);
         d.Code.Should().Be("NU1101");
         d.Line.Should().BeNull();
         d.Column.Should().BeNull();
@@ -108,7 +109,7 @@ public sealed class BuildDiagnosticParserTests
         var diagnostics = BuildDiagnosticParser.Parse(stdout);
 
         diagnostics.Should().ContainSingle();
-        diagnostics[0].Severity.Should().Be("info");
+        diagnostics[0].Severity.Should().Be(BuildSeverity.Info);
         diagnostics[0].Code.Should().Be("IDE0005");
     }
 

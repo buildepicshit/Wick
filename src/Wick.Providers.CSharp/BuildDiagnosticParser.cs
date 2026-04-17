@@ -156,13 +156,13 @@ public static class BuildDiagnosticParser
         return null;
     }
 
-    private static string NormalizeSeverity(string raw) => raw.ToLowerInvariant() switch
+    private static BuildSeverity NormalizeSeverity(string raw) => raw.ToLowerInvariant() switch
     {
-        "error" => "error",
-        "warning" => "warning",
-        "info" => "info",
-        "hidden" => "info",
-        _ => "info",
+        "error" => BuildSeverity.Error,
+        "warning" => BuildSeverity.Warning,
+        "info" => BuildSeverity.Info,
+        "hidden" => BuildSeverity.Info,
+        _ => BuildSeverity.Info,
     };
 
     private static int? ParseInt(string s) =>

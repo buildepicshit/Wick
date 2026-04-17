@@ -31,7 +31,7 @@ public sealed class BuildDiagnosticEnricherTests : IAsyncLifetime
 
         var diag = new BuildDiagnostic
         {
-            Severity = "error",
+            Severity = BuildSeverity.Error,
             Code = "CS0219",
             Message = "Synthetic error for test",
             FilePath = playerController,
@@ -53,7 +53,7 @@ public sealed class BuildDiagnosticEnricherTests : IAsyncLifetime
         var enricher = new BuildDiagnosticEnricher(_service);
         var diag = new BuildDiagnostic
         {
-            Severity = "error",
+            Severity = BuildSeverity.Error,
             Code = "CS0103",
             Message = "The name 'Foo' does not exist in the current context",
             FilePath = "/some/path/that/does/not/exist.cs",
@@ -72,7 +72,7 @@ public sealed class BuildDiagnosticEnricherTests : IAsyncLifetime
         var enricher = new BuildDiagnosticEnricher(_service);
         var diag = new BuildDiagnostic
         {
-            Severity = "error",
+            Severity = BuildSeverity.Error,
             Code = "MSB3644",
             Message = "The reference assemblies were not found",
         };
@@ -92,7 +92,7 @@ public sealed class BuildDiagnosticEnricherTests : IAsyncLifetime
         // BrokenType.cs line 15 says `Healt -= amount;` — the typo target for "Health".
         var diag = new BuildDiagnostic
         {
-            Severity = "error",
+            Severity = BuildSeverity.Error,
             Code = "CS0103",
             Message = "The name 'Healt' does not exist in the current context",
             FilePath = brokenType,
@@ -116,7 +116,7 @@ public sealed class BuildDiagnosticEnricherTests : IAsyncLifetime
 
         var diag = new BuildDiagnostic
         {
-            Severity = "error",
+            Severity = BuildSeverity.Error,
             Code = "CS0103",
             Message = "The name 'Foo' does not exist",
             FilePath = "/project/Foo.cs",
@@ -140,7 +140,7 @@ public sealed class BuildDiagnosticEnricherTests : IAsyncLifetime
 
         var diag = new BuildDiagnostic
         {
-            Severity = "error",
+            Severity = BuildSeverity.Error,
             Code = "CS0103",
             Message = "The name 'Foo' does not exist",
             FilePath = "/project/Foo.cs",

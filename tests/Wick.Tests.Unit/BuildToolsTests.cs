@@ -65,7 +65,7 @@ public sealed class BuildToolsTests
         summary.ErrorCount.Should().Be(1);
         summary.WarningCount.Should().Be(1);
         summary.Diagnostics.Should().HaveCount(2);
-        summary.Target.Should().Be("build");
+        summary.Target.Should().Be(BuildTarget.Build);
         summary.RawStdout.Should().Contain("CS0103");
         cli.CallCount.Should().Be(1);
         cli.LastArgs.Should().Contain("build");

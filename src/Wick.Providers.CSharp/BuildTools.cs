@@ -48,7 +48,7 @@ public sealed class BuildTools
             cancellationToken).ConfigureAwait(false);
         sw.Stop();
 
-        return BuildSummary(result, sw.ElapsedMilliseconds, target: "build", enrich: true);
+        return BuildSummary(result, sw.ElapsedMilliseconds, target: BuildTarget.Build, enrich: true);
     }
 
     [McpServerTool, Description(
@@ -77,7 +77,7 @@ public sealed class BuildTools
             cancellationToken).ConfigureAwait(false);
         sw.Stop();
 
-        return BuildSummary(result, sw.ElapsedMilliseconds, target: "test", enrich: true);
+        return BuildSummary(result, sw.ElapsedMilliseconds, target: BuildTarget.Test, enrich: true);
     }
 
     [McpServerTool, Description(
@@ -94,7 +94,7 @@ public sealed class BuildTools
             cancellationToken: cancellationToken).ConfigureAwait(false);
         sw.Stop();
 
-        return BuildSummary(result, sw.ElapsedMilliseconds, target: "clean", enrich: false);
+        return BuildSummary(result, sw.ElapsedMilliseconds, target: BuildTarget.Clean, enrich: false);
     }
 
     [McpServerTool, Description(
@@ -120,7 +120,7 @@ public sealed class BuildTools
             cancellationToken).ConfigureAwait(false);
         sw.Stop();
 
-        var summary = BuildSummary(result, sw.ElapsedMilliseconds, target: "build", enrich: includeEnrichment);
+        var summary = BuildSummary(result, sw.ElapsedMilliseconds, target: BuildTarget.Build, enrich: includeEnrichment);
 
         // Apply limit.
         if (limit > 0 && summary.Diagnostics.Count > limit)
@@ -216,7 +216,7 @@ public sealed class BuildTools
         }, JsonOptions);
     }
 
-    private BuildResultSummary BuildSummary(CliResult cli, long durationMs, string target, bool enrich)
+    private BuildResultSummary BuildSummary(CliResult cli, long durationMs, BuildTarget target, bool enrich)
     {
         var parsed = BuildDiagnosticParser.Parse(cli.Output);
         if (enrich && parsed.Count > 0)
@@ -228,8 +228,8 @@ public sealed class BuildTools
         var warningCount = 0;
         foreach (var d in parsed)
         {
-            if (d.Severity == "error") errorCount++;
-            else if (d.Severity == "warning") warningCount++;
+            if (d.Severity == BuildSeverity.Error) errorCount++;
+            else if (d.Severity == BuildSeverity.Warning) warningCount++;
         }
 
         return new BuildResultSummary
@@ -249,7 +249,7 @@ public sealed class BuildTools
         BuildDiagnostic? top = null;
         foreach (var d in diagnostics)
         {
-            if (d.Severity == "error")
+            if (d.Severity == BuildSeverity.Error)
             {
                 top = d;
                 break;

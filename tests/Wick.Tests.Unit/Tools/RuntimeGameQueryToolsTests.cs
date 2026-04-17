@@ -22,7 +22,7 @@ public sealed class RuntimeGameQueryToolsTests
 
         result.Ok.Should().BeFalse();
         result.Error.Should().NotBeNull();
-        result.Error!.Code.Should().Be(WickBridgeErrorCodes.NoLiveBridge);
+        result.Error!.Code.Should().Be(WickBridgeErrorCode.NoLiveBridge);
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public sealed class RuntimeGameQueryToolsTests
     {
         var stub = Substitute.For<IInProcessBridgeClient>();
         stub.SetPropertyAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<object?>(), Arg.Any<CancellationToken>())
-            .Returns(new BridgeResponse(false, null, WickBridgeErrorCodes.PropertyNotFound, "no such prop"));
+            .Returns(new BridgeResponse(false, null, WickBridgeErrorCode.PropertyNotFound, "no such prop"));
         var factory = new InProcessBridgeClientFactory();
         factory.SetForTesting(stub);
         var tools = new RuntimeGameQueryTools(factory);
@@ -88,7 +88,7 @@ public sealed class RuntimeGameQueryToolsTests
         var result = await tools.RuntimeSetProperty("/root/P", "NoSuchProp", 1, TestContext.Current.CancellationToken);
 
         result.Ok.Should().BeFalse();
-        result.Error!.Code.Should().Be(WickBridgeErrorCodes.PropertyNotFound);
+        result.Error!.Code.Should().Be(WickBridgeErrorCode.PropertyNotFound);
         result.Error.Message.Should().Be("no such prop");
     }
 
