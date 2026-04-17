@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using Wick.Core;
 using StreamJsonRpc;
@@ -9,20 +10,31 @@ namespace Wick.Providers.Godot;
 /// Can be multiplexed into either the Editor (Port 6505) or Runtime (Port 7777).
 /// Uses plain NewLine delimited JSON for simple GDScript integration on the server side.
 /// </summary>
-public sealed class GodotBridgeClient : HeaderDelimitedRpcClient
+public sealed partial class GodotBridgeClient : HeaderDelimitedRpcClient
 {
+    [LoggerMessage(EventId = 410, Level = LogLevel.Information, Message = "[GodotBridge] {Message}")]
+    private static partial void LogBridgeMessage(ILogger logger, string message);
+
     private sealed class BridgeTarget
     {
-        [JsonRpcMethod("bridge/log")]
-        public static void OnLog(string message)
+        private readonly ILogger? _logger;
+
+        public BridgeTarget(ILogger? logger)
         {
-            Console.Error.WriteLine($"[GodotBridge] {message}");
+            _logger = logger;
+        }
+
+        [JsonRpcMethod("bridge/log")]
+        public void OnLog(string message)
+        {
+            if (_logger is not null) LogBridgeMessage(_logger, message);
         }
     }
 
     public int Port { get; }
 
-    public GodotBridgeClient(int port) : base(new BridgeTarget())
+    public GodotBridgeClient(int port, ILogger<GodotBridgeClient>? logger = null)
+        : base(new BridgeTarget(logger), logger)
     {
         Port = port;
     }

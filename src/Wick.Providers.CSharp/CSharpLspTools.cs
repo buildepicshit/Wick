@@ -14,6 +14,18 @@ public static class CSharpLspTools
     private static readonly CSharpLspClient Client = new();
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
+    static CSharpLspTools()
+    {
+        // Dispose the shared csharp-ls client on process exit. Its Dispose
+        // kills the child csharp-ls process — without this the process can
+        // outlive the server in dev/hot-reload paths.
+        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+        {
+            try { Client.Dispose(); }
+            catch { /* best-effort teardown during process exit */ }
+        };
+    }
+
     [McpServerTool, Description("Explicitly connects to the C# language server via csharp-ls for the specified solution.")]
     public static async Task<string> CsLspConnect(
         [Description("Absolute path to the .sln file. If left empty, attempts to find one in the current directory.")] string solutionPath = "",

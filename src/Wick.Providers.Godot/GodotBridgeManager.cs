@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Wick.Core;
 
 namespace Wick.Providers.Godot;
@@ -8,13 +9,32 @@ namespace Wick.Providers.Godot;
 /// and the running Game Runtime (Port 7777).
 /// Provides safe unified access to the bridge clients.
 /// </summary>
-public sealed class GodotBridgeManager : BackgroundService, IGodotBridgeManagerAccessor
+public sealed partial class GodotBridgeManager : BackgroundService, IGodotBridgeManagerAccessor
 {
-    public GodotBridgeClient EditorClient { get; } = new GodotBridgeClient(6505);
-    public GodotBridgeClient RuntimeClient { get; } = new GodotBridgeClient(7777);
+    private readonly ILogger<GodotBridgeManager>? _logger;
+
+    public GodotBridgeClient EditorClient { get; }
+    public GodotBridgeClient RuntimeClient { get; }
 
     public bool IsEditorConnected => EditorClient.IsConnected;
     public bool IsRuntimeConnected => RuntimeClient.IsConnected;
+
+    public GodotBridgeManager()
+        : this(null, null)
+    {
+    }
+
+    public GodotBridgeManager(ILogger<GodotBridgeManager>? logger, ILoggerFactory? loggerFactory)
+    {
+        _logger = logger;
+        var clientLogger = loggerFactory?.CreateLogger<GodotBridgeClient>();
+        EditorClient = new GodotBridgeClient(6505, clientLogger);
+        RuntimeClient = new GodotBridgeClient(7777, clientLogger);
+    }
+
+    [LoggerMessage(EventId = 300, Level = LogLevel.Warning,
+        Message = "Bridge health check error")]
+    private static partial void LogHealthCheckError(ILogger logger, Exception ex);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -39,7 +59,7 @@ public sealed class GodotBridgeManager : BackgroundService, IGodotBridgeManagerA
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[Wick] Bridge health check error: {ex.GetType().Name}: {ex.Message}");
+                if (_logger is not null) LogHealthCheckError(_logger, ex);
                 // Continue — the health loop retries on the next cycle
             }
 

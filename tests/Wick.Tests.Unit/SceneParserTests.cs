@@ -40,7 +40,7 @@ public class SceneParserTests
     public void Parse_ExtractsRootNode()
     {
         var scene = SceneParser.Parse(SampleScene);
-        var root = scene.Nodes.First();
+        var root = scene.Nodes[0];
         root.Name.Should().Be("Player");
         root.Type.Should().Be("CharacterBody2D");
         root.Parent.Should().BeNull();
