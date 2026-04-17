@@ -34,7 +34,7 @@ public sealed class CSharpAnalysisTools
             {
               "provider": "C#/.NET",
               "status": "active",
-              "capabilities": ["roslyn", "lsp", "dap", "dotnet_cli", "nuget", "trx_parsing"],
+              "capabilities": ["roslyn", "lsp", "dap", "dotnet_cli", "nuget"],
               "roslyn_version": "{{roslynVersion}}"
             }
             """;

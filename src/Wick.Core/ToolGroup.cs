@@ -22,11 +22,6 @@ public sealed class ToolGroup
     public required IReadOnlyList<string> Tools { get; init; }
 
     /// <summary>
-    /// Search keywords for auto-activation via tool.catalog.
-    /// </summary>
-    public required IReadOnlyList<string> Keywords { get; init; }
-
-    /// <summary>
     /// Whether this is a core group (always visible) or dynamic (on-demand).
     /// </summary>
     public bool IsCore { get; init; }

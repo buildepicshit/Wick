@@ -12,13 +12,11 @@ public class ToolGroupTests
             Name = "csharp_lsp",
             Description = "C# Language Server Protocol tools",
             Tools = ["csharp.diagnostics", "csharp.completions", "csharp.references"],
-            Keywords = ["csharp", "c#", "lsp", "diagnostics", "intellisense"],
             IsCore = false,
         };
 
         group.Name.Should().Be("csharp_lsp");
         group.Tools.Should().HaveCount(3);
-        group.Keywords.Should().Contain("diagnostics");
         group.IsCore.Should().BeFalse();
     }
 
@@ -30,7 +28,6 @@ public class ToolGroupTests
             Name = "test",
             Description = "test group",
             Tools = [],
-            Keywords = [],
         };
 
         group.IsCore.Should().BeFalse();

@@ -49,21 +49,11 @@ public sealed class GodotBridgeManager : BackgroundService, IGodotBridgeManagerA
     }
 
     /// <summary>
-    /// Returns basic scene context when the editor is connected.
-    /// Full scene tree query will be added when bridge tools are wired.
+    /// Scene context lookup for enriched exceptions. Returns null until the
+    /// bridge query path is wired — shipping an all-null stub was claiming a
+    /// feature that does not yet work.
     /// </summary>
-    public SceneContext? GetSceneContext()
-    {
-        if (!IsEditorConnected)
-            return null;
-
-        return new SceneContext
-        {
-            ScenePath = null,    // Not yet wired to bridge query
-            ThrowingNode = null,
-            NodeCount = null,
-        };
-    }
+    public SceneContext? GetSceneContext() => null;
 
     public override Task StopAsync(CancellationToken cancellationToken)
     {
