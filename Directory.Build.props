@@ -9,6 +9,8 @@
     <AnalysisMode>Recommended</AnalysisMode>
     <IsPackable>false</IsPackable>
     <WarnOnPackingNonPackableProject>false</WarnOnPackingNonPackableProject>
+    <!-- Single source of truth for repo version. Server reads it from assembly; STATUS.md + CHANGELOG must stay in lockstep. -->
+    <Version>0.4.0</Version>
   </PropertyGroup>
 
   <!-- Deterministic + reproducible builds (studio convention from Floom) -->

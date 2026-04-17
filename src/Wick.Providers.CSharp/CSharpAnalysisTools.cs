@@ -28,12 +28,14 @@ public sealed class CSharpAnalysisTools
     [McpServerTool, Description("Returns C#/.NET provider status and capabilities.")]
     public static string CSharpStatus()
     {
-        return """
+        var roslynVersion = typeof(Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree)
+            .Assembly.GetName().Version?.ToString(3) ?? "unknown";
+        return $$"""
             {
               "provider": "C#/.NET",
               "status": "active",
               "capabilities": ["roslyn", "lsp", "dap", "dotnet_cli", "nuget", "trx_parsing"],
-              "roslyn_version": "4.8.0"
+              "roslyn_version": "{{roslynVersion}}"
             }
             """;
     }

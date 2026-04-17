@@ -9,7 +9,7 @@ tests:
   failing: 0
 blockers: []
 next_milestone: Phase 2 dogfooding — Floom + UsefulIdiots integration validation
-version: 0.1.0
+version: 0.4.0
 dotnet: 10.0.201
 target_framework: net10.0
 license: MIT
@@ -23,7 +23,7 @@ license: MIT
 
 Wick is a native .NET 10 Model Context Protocol server that captures unhandled C# exceptions from a running Godot game, enriches each exception with Roslyn-powered source context (calling method body, surrounding lines, caller chain), and exposes the enriched exception stream to AI coding assistants over MCP. The value proposition is narrow and deliberate: **when a Godot C# game crashes, the agent sees the exception with full source-level context and can fix it in one turn instead of ten.**
 
-**Version:** `0.1.0` (initial public release)
+**Version:** `0.4.0` (sourced from `Directory.Build.props`; MCP server reads it at startup)
 **.NET:** `10.0.201` SDK, targeting `net10.0`, C# 14
 **Target Godot:** `4.6.1-stable-mono`
 **License:** MIT

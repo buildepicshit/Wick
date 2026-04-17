@@ -37,7 +37,7 @@ public class GodotLspClient : HeaderDelimitedRpcClient
             var initParams = new
             {
                 processId = Environment.ProcessId,
-                rootUri = "null",
+                rootUri = (string?)null,
                 capabilities = new { }
             };
 

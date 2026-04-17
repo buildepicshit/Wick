@@ -37,7 +37,7 @@ public sealed class GodotDapClient : IDisposable
             // DAP handshake
             var initResponse = await SendRequestAsync("initialize", new
             {
-                clientID = "sharp-peak",
+                clientID = "wick",
                 adapterID = "godot"
             }, ct);
 

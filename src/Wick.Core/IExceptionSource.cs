@@ -2,9 +2,12 @@ namespace Wick.Core;
 
 /// <summary>
 /// Pluggable source of raw exceptions from a running Godot game.
-/// Implementations: BridgeExceptionSource (primary), LogFileExceptionSource (fallback).
-/// When Godot fixes AppDomain.UnhandledException (godot#73515),
-/// AppDomainExceptionSource plugs in alongside existing sources.
+/// Implementations: <see cref="Wick.Providers.Godot.ProcessExceptionSource"/>
+/// (Tier 1 stderr capture from agent-launched games) and
+/// <see cref="Wick.Providers.Godot.BridgeExceptionSource"/> (Tier 2 channel
+/// from the in-process <c>Wick.Runtime</c> companion over TCP).
+/// When Godot fixes <c>AppDomain.UnhandledException</c> (godot#73515) an
+/// additional source will plug in alongside these.
 /// </summary>
 public interface IExceptionSource
 {

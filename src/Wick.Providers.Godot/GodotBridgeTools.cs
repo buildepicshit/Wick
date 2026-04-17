@@ -52,12 +52,12 @@ public sealed class GodotBridgeTools
     public async Task<string> EditorConnect(
         [Description("The specific target environment to connect to. Valid values: 'editor', 'runtime'.")] string target)
     {
-        if (target == "editor")
+        if (string.Equals(target, "editor", StringComparison.OrdinalIgnoreCase))
         {
             bool ok = await _bridgeManager.EditorClient.EnsureConnectedAsync();
             return ok ? "Successfully connected to Godot Editor." : "Failed to connect to Godot Editor.";
         }
-        else if (target == "runtime")
+        else if (string.Equals(target, "runtime", StringComparison.OrdinalIgnoreCase))
         {
             bool ok = await _bridgeManager.RuntimeClient.EnsureConnectedAsync();
             return ok ? "Successfully connected to live Godot Runtime." : "Failed to connect to Godot Runtime.";
