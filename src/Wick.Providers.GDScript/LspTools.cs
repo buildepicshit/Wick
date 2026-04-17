@@ -15,6 +15,18 @@ public static class LspTools
     private static readonly GodotLspClient LspClient = new();
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
+    static LspTools()
+    {
+        // Dispose the shared LSP client on process exit. Without this, the TCP
+        // connection to Godot's language server is released only when the OS
+        // reclaims the process — fine in practice, messy in dev/hot-reload.
+        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+        {
+            try { LspClient.Dispose(); }
+            catch { /* best-effort teardown during process exit */ }
+        };
+    }
+
     [McpServerTool, Description("Explicitly connects and initializes the GDScript Language Server. (Most other LSP tools will automatically connect if needed).")]
     public static async Task<string> GdLspConnect(CancellationToken ct)
     {

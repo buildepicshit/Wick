@@ -11,6 +11,18 @@ public static class DapTools
     private static readonly GodotDapClient DapClient = new();
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
+    static DapTools()
+    {
+        // Dispose the shared DAP client on process exit so its TCP socket to
+        // Godot's debug adapter gets closed cleanly (instead of relying on OS
+        // reclamation when the server dies).
+        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+        {
+            try { DapClient.Dispose(); }
+            catch { /* best-effort teardown during process exit */ }
+        };
+    }
+
     [McpServerTool, Description("Connect to Godot Debug Adapter Protocol (port 6006) and launch the project in debug mode.")]
     public static async Task<string> GdDapLaunch(CancellationToken ct)
     {
