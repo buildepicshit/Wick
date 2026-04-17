@@ -99,25 +99,66 @@ public static class WickRuntime
     /// <see cref="AppDomain.ProcessExit"/>; exposed for tests and users who need to
     /// hot-reload the library.
     /// </summary>
+    /// <remarks>
+    /// Every teardown step is wrapped in a narrow catch: Uninstall runs during the
+    /// user's game exit path (ProcessExit), and a surfaced exception here would
+    /// cascade into their own shutdown. Teardown is best-effort by design — the
+    /// process is about to die either way. Failures are emitted to the Wick
+    /// envelope stream so we can observe them server-side.
+    /// </remarks>
     public static void Uninstall()
     {
         if (Interlocked.Exchange(ref s_installed, 0) == 0)
         {
             return;
         }
-        try { s_taskHook?.Uninstall(); } catch { }
-        try { s_appDomainHook?.Uninstall(); } catch { }
-        try { s_bridgeServer?.Stop(); } catch { }
-        try { s_loggerProvider?.Dispose(); } catch { }
+
+        // TaskScheduler/AppDomain unhook: can throw if another hook tampered with the
+        // delegate list. Best-effort — losing the unhook step means a dead handler
+        // lingers until process exit (which is happening now anyway).
+        SafeTeardown("task_hook_uninstall", () => s_taskHook?.Uninstall());
+        SafeTeardown("appdomain_hook_uninstall", () => s_appDomainHook?.Uninstall());
+
+        // Bridge server: Stop() closes the TCP listener; can throw
+        // ObjectDisposedException / SocketException if the listener died earlier.
+        SafeTeardown("bridge_server_stop", () => s_bridgeServer?.Stop());
+
+        // Logger provider: Dispose() should be idempotent but user code can subclass it.
+        SafeTeardown("logger_provider_dispose", () => s_loggerProvider?.Dispose());
+
         if (s_processExitHandler is not null)
         {
-            try { AppDomain.CurrentDomain.ProcessExit -= s_processExitHandler; } catch { }
+            // Event unhook: shouldn't throw; guarded for paranoia during ProcessExit.
+            SafeTeardown("process_exit_unhook",
+                () => AppDomain.CurrentDomain.ProcessExit -= s_processExitHandler);
             s_processExitHandler = null;
         }
+
         s_taskHook = null;
         s_appDomainHook = null;
         s_bridgeServer = null;
         s_loggerProvider = null;
+    }
+
+    private static void SafeTeardown(string step, Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (Exception ex)
+        {
+            // Emit to Wick envelope stream so server-side sees teardown drift.
+            try
+            {
+                WickEnvelope.WriteEnvelope("warning",
+                    new { step, error_type = ex.GetType().Name, message = ex.Message });
+            }
+            catch
+            {
+                // If envelope write fails during process-exit, we've done all we can.
+            }
+        }
     }
 }
 
