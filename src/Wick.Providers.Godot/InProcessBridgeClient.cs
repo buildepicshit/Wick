@@ -2,6 +2,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Wick.Providers.Godot;
 
@@ -22,26 +23,47 @@ public interface IInProcessBridgeClient
 /// <summary>
 /// Uniform response shape returned by every bridge RPC. <see cref="Ok"/> mirrors the wire
 /// protocol; when false, <see cref="ErrorCode"/> is one of the closed set defined in
-/// <see cref="WickBridgeErrorCodes"/>.
+/// <see cref="WickBridgeErrorCode"/>.
 /// </summary>
 public sealed record BridgeResponse(
     bool Ok,
     JsonElement? Result,
-    string? ErrorCode,
+    WickBridgeErrorCode? ErrorCode,
     string? ErrorMessage);
 
-/// <summary>Closed set of bridge error codes.</summary>
-public static class WickBridgeErrorCodes
+/// <summary>Closed set of bridge error codes. Serialized as lowercase snake_case on the wire.</summary>
+[JsonConverter(typeof(JsonStringEnumConverter<WickBridgeErrorCode>))]
+public enum WickBridgeErrorCode
 {
-    public const string NoLiveBridge = "no_live_bridge";
-    public const string UnknownMethod = "unknown_method";
-    public const string NodeNotFound = "node_not_found";
-    public const string MethodNotFound = "method_not_found";
-    public const string PropertyNotFound = "property_not_found";
-    public const string InvalidParams = "invalid_params";
-    public const string ConnectionRefused = "connection_refused";
-    public const string Timeout = "timeout";
-    public const string Internal = "internal";
+    [JsonStringEnumMemberName("no_live_bridge")] NoLiveBridge,
+    [JsonStringEnumMemberName("unknown_method")] UnknownMethod,
+    [JsonStringEnumMemberName("node_not_found")] NodeNotFound,
+    [JsonStringEnumMemberName("method_not_found")] MethodNotFound,
+    [JsonStringEnumMemberName("property_not_found")] PropertyNotFound,
+    [JsonStringEnumMemberName("invalid_params")] InvalidParams,
+    [JsonStringEnumMemberName("connection_refused")] ConnectionRefused,
+    [JsonStringEnumMemberName("timeout")] Timeout,
+    [JsonStringEnumMemberName("internal")] Internal,
+}
+
+internal static class WickBridgeErrorCodeParsing
+{
+    /// <summary>
+    /// Parses a wire-format error code string into the enum. Unknown codes map to
+    /// <see cref="WickBridgeErrorCode.Internal"/> so the pipeline always yields a value.
+    /// </summary>
+    public static WickBridgeErrorCode Parse(string? wireValue) => wireValue switch
+    {
+        "no_live_bridge" => WickBridgeErrorCode.NoLiveBridge,
+        "unknown_method" => WickBridgeErrorCode.UnknownMethod,
+        "node_not_found" => WickBridgeErrorCode.NodeNotFound,
+        "method_not_found" => WickBridgeErrorCode.MethodNotFound,
+        "property_not_found" => WickBridgeErrorCode.PropertyNotFound,
+        "invalid_params" => WickBridgeErrorCode.InvalidParams,
+        "connection_refused" => WickBridgeErrorCode.ConnectionRefused,
+        "timeout" => WickBridgeErrorCode.Timeout,
+        _ => WickBridgeErrorCode.Internal,
+    };
 }
 
 /// <summary>
@@ -104,11 +126,11 @@ public sealed class InProcessBridgeClient : IInProcessBridgeClient
         }
         catch (SocketException ex)
         {
-            return new BridgeResponse(false, null, WickBridgeErrorCodes.ConnectionRefused, ex.Message);
+            return new BridgeResponse(false, null, WickBridgeErrorCode.ConnectionRefused, ex.Message);
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
-            return new BridgeResponse(false, null, WickBridgeErrorCodes.Timeout, "Connect timed out");
+            return new BridgeResponse(false, null, WickBridgeErrorCode.Timeout, "Connect timed out");
         }
 
         using (client)
@@ -130,14 +152,14 @@ public sealed class InProcessBridgeClient : IInProcessBridgeClient
                 var responseLine = await reader.ReadLineAsync(timeoutCts.Token).ConfigureAwait(false);
                 if (responseLine is null)
                 {
-                    return new BridgeResponse(false, null, WickBridgeErrorCodes.Internal, "Empty response");
+                    return new BridgeResponse(false, null, WickBridgeErrorCode.Internal, "Empty response");
                 }
 
                 using var doc = JsonDocument.Parse(responseLine);
                 var root = doc.RootElement;
                 if (root.ValueKind != JsonValueKind.Object)
                 {
-                    return new BridgeResponse(false, null, WickBridgeErrorCodes.Internal, "Malformed response (not object)");
+                    return new BridgeResponse(false, null, WickBridgeErrorCode.Internal, "Malformed response (not object)");
                 }
                 var ok = root.TryGetProperty("ok", out var okEl) && okEl.ValueKind == JsonValueKind.True;
                 if (ok)
@@ -153,23 +175,23 @@ public sealed class InProcessBridgeClient : IInProcessBridgeClient
                     if (errEl.TryGetProperty("code", out var c) && c.ValueKind == JsonValueKind.String) code = c.GetString();
                     if (errEl.TryGetProperty("message", out var m) && m.ValueKind == JsonValueKind.String) msg = m.GetString();
                 }
-                return new BridgeResponse(false, null, code ?? WickBridgeErrorCodes.Internal, msg);
+                return new BridgeResponse(false, null, WickBridgeErrorCodeParsing.Parse(code), msg);
             }
             catch (OperationCanceledException) when (!ct.IsCancellationRequested)
             {
-                return new BridgeResponse(false, null, WickBridgeErrorCodes.Timeout, "Request timed out");
+                return new BridgeResponse(false, null, WickBridgeErrorCode.Timeout, "Request timed out");
             }
             catch (JsonException ex)
             {
-                return new BridgeResponse(false, null, WickBridgeErrorCodes.Internal, $"Malformed response JSON: {ex.Message}");
+                return new BridgeResponse(false, null, WickBridgeErrorCode.Internal, $"Malformed response JSON: {ex.Message}");
             }
             catch (IOException ex)
             {
-                return new BridgeResponse(false, null, WickBridgeErrorCodes.Internal, ex.Message);
+                return new BridgeResponse(false, null, WickBridgeErrorCode.Internal, ex.Message);
             }
             catch (SocketException ex)
             {
-                return new BridgeResponse(false, null, WickBridgeErrorCodes.ConnectionRefused, ex.Message);
+                return new BridgeResponse(false, null, WickBridgeErrorCode.ConnectionRefused, ex.Message);
             }
         }
     }

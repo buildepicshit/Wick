@@ -86,7 +86,7 @@ public sealed class InProcessBridgeClientTests
         var response = await client.GetNodePropertiesAsync("/root/nope", TestContext.Current.CancellationToken);
 
         response.Ok.Should().BeFalse();
-        response.ErrorCode.Should().Be("node_not_found");
+        response.ErrorCode.Should().Be(WickBridgeErrorCode.NodeNotFound);
         response.ErrorMessage.Should().Be("missing");
     }
 
@@ -104,9 +104,9 @@ public sealed class InProcessBridgeClientTests
 
         response.Ok.Should().BeFalse();
         response.ErrorCode.Should().BeOneOf(
-            WickBridgeErrorCodes.ConnectionRefused,
-            WickBridgeErrorCodes.Timeout,
-            WickBridgeErrorCodes.Internal);
+            WickBridgeErrorCode.ConnectionRefused,
+            WickBridgeErrorCode.Timeout,
+            WickBridgeErrorCode.Internal);
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public sealed class InProcessBridgeClientTests
         var response = await client.CallMethodAsync("/root", "Shoot", System.Array.Empty<object?>(), TestContext.Current.CancellationToken);
 
         response.Ok.Should().BeFalse();
-        response.ErrorCode.Should().Be(WickBridgeErrorCodes.Internal);
+        response.ErrorCode.Should().Be(WickBridgeErrorCode.Internal);
     }
 
     [Fact]

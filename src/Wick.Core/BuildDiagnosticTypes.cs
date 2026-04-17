@@ -1,4 +1,31 @@
+using System.Text.Json.Serialization;
+
 namespace Wick.Core;
+
+/// <summary>
+/// Severity level for a <see cref="BuildDiagnostic"/>. Serialized as lowercase string
+/// on the MCP wire for client compatibility.
+/// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter<BuildSeverity>))]
+public enum BuildSeverity
+{
+    [JsonStringEnumMemberName("error")] Error,
+    [JsonStringEnumMemberName("warning")] Warning,
+    [JsonStringEnumMemberName("info")] Info,
+}
+
+/// <summary>
+/// The dotnet CLI target that produced a <see cref="BuildResultSummary"/>.
+/// Serialized as lowercase string on the wire.
+/// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter<BuildTarget>))]
+public enum BuildTarget
+{
+    [JsonStringEnumMemberName("build")] Build,
+    [JsonStringEnumMemberName("test")] Test,
+    [JsonStringEnumMemberName("clean")] Clean,
+    [JsonStringEnumMemberName("rebuild")] Rebuild,
+}
 
 /// <summary>
 /// A single diagnostic produced by <c>dotnet build</c> (or any MSBuild invocation),
@@ -6,8 +33,8 @@ namespace Wick.Core;
 /// </summary>
 public sealed record BuildDiagnostic
 {
-    /// <summary>"error" | "warning" | "info".</summary>
-    public required string Severity { get; init; }
+    /// <summary>Severity of the diagnostic. Serialized as lowercase string on the wire.</summary>
+    public required BuildSeverity Severity { get; init; }
 
     /// <summary>Diagnostic code, e.g. "CS0103", "MSB3644".</summary>
     public required string Code { get; init; }
@@ -64,10 +91,10 @@ public sealed record BuildResultSummary
     /// <summary>True when the underlying dotnet command exited with code 0.</summary>
     public required bool Succeeded { get; init; }
 
-    /// <summary>Number of <see cref="BuildDiagnostic"/> entries with severity "error".</summary>
+    /// <summary>Number of <see cref="BuildDiagnostic"/> entries with severity Error.</summary>
     public required int ErrorCount { get; init; }
 
-    /// <summary>Number of <see cref="BuildDiagnostic"/> entries with severity "warning".</summary>
+    /// <summary>Number of <see cref="BuildDiagnostic"/> entries with severity Warning.</summary>
     public required int WarningCount { get; init; }
 
     /// <summary>All parsed diagnostics, in the order MSBuild emitted them.</summary>
@@ -76,8 +103,8 @@ public sealed record BuildResultSummary
     /// <summary>Wall-clock duration of the <c>dotnet</c> invocation, in milliseconds.</summary>
     public required long DurationMs { get; init; }
 
-    /// <summary>The MSBuild target that ran: "build", "test", "clean", "rebuild".</summary>
-    public string? Target { get; init; }
+    /// <summary>The MSBuild target that ran.</summary>
+    public required BuildTarget Target { get; init; }
 
     /// <summary>Raw stdout of the dotnet invocation, retained for agents that want the verbatim view.</summary>
     public string? RawStdout { get; init; }

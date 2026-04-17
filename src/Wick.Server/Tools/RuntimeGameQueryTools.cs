@@ -112,7 +112,7 @@ public sealed class RuntimeGameQueryTools
         Ok: false,
         Result: null,
         Error: new RuntimeQueryError(
-            Code: WickBridgeErrorCodes.NoLiveBridge,
+            Code: WickBridgeErrorCode.NoLiveBridge,
             Message: "Running game does not have Wick.Runtime companion installed, or no game is running."));
 
     private static RuntimeQueryResult Translate(BridgeResponse response)
@@ -128,7 +128,7 @@ public sealed class RuntimeGameQueryTools
             Ok: false,
             Result: null,
             Error: new RuntimeQueryError(
-                Code: response.ErrorCode ?? WickBridgeErrorCodes.Internal,
+                Code: response.ErrorCode ?? WickBridgeErrorCode.Internal,
                 Message: response.ErrorMessage));
     }
 }
@@ -139,4 +139,4 @@ public sealed record RuntimeQueryResult(
     object? Result,
     RuntimeQueryError? Error);
 
-public sealed record RuntimeQueryError(string Code, string? Message);
+public sealed record RuntimeQueryError(WickBridgeErrorCode Code, string? Message);

@@ -65,7 +65,7 @@ public sealed class WickBridgeServerTests
         {
             var response = await client.GetNodePropertiesAsync("/missing", TestContext.Current.CancellationToken);
             response.Ok.Should().BeFalse();
-            response.ErrorCode.Should().Be(WickBridgeErrorCodes.NodeNotFound);
+            response.ErrorCode.Should().Be(WickBridgeErrorCode.NodeNotFound);
         }
     }
 
@@ -78,7 +78,7 @@ public sealed class WickBridgeServerTests
         {
             var response = await client.CallMethodAsync("/root", "NoSuchMethod", System.Array.Empty<object?>(), TestContext.Current.CancellationToken);
             response.Ok.Should().BeFalse();
-            response.ErrorCode.Should().Be(WickBridgeErrorCodes.MethodNotFound);
+            response.ErrorCode.Should().Be(WickBridgeErrorCode.MethodNotFound);
         }
     }
 
