@@ -69,8 +69,8 @@ public sealed class InProcessBridgeClientTests
 
         var response = await client.GetSceneTreeAsync(5, TestContext.Current.CancellationToken);
 
-        response.Ok.Should().BeTrue();
-        response.Result.Should().NotBeNull();
+        response.Should().BeOfType<BridgeResponse.Ok>();
+        ((BridgeResponse.Ok)response).Result.Should().NotBeNull();
         stub.LastRequest.Should().NotBeNull();
         stub.LastRequest.Should().Contain("\"method\":\"get_scene_tree\"");
         stub.LastRequest.Should().Contain("\"max_depth\":5");
@@ -85,9 +85,9 @@ public sealed class InProcessBridgeClientTests
 
         var response = await client.GetNodePropertiesAsync("/root/nope", TestContext.Current.CancellationToken);
 
-        response.Ok.Should().BeFalse();
-        response.ErrorCode.Should().Be(WickBridgeErrorCode.NodeNotFound);
-        response.ErrorMessage.Should().Be("missing");
+        var failure = response.Should().BeOfType<BridgeResponse.Failure>().Subject;
+        failure.ErrorCode.Should().Be(WickBridgeErrorCode.NodeNotFound);
+        failure.ErrorMessage.Should().Be("missing");
     }
 
     [Fact]
@@ -102,8 +102,8 @@ public sealed class InProcessBridgeClientTests
         var client = new InProcessBridgeClient(deadPort, timeout: System.TimeSpan.FromSeconds(2));
         var response = await client.FindNodesInGroupAsync("enemies", TestContext.Current.CancellationToken);
 
-        response.Ok.Should().BeFalse();
-        response.ErrorCode.Should().BeOneOf(
+        var failure = response.Should().BeOfType<BridgeResponse.Failure>().Subject;
+        failure.ErrorCode.Should().BeOneOf(
             WickBridgeErrorCode.ConnectionRefused,
             WickBridgeErrorCode.Timeout,
             WickBridgeErrorCode.Internal);
@@ -117,8 +117,8 @@ public sealed class InProcessBridgeClientTests
 
         var response = await client.CallMethodAsync("/root", "Shoot", System.Array.Empty<object?>(), TestContext.Current.CancellationToken);
 
-        response.Ok.Should().BeFalse();
-        response.ErrorCode.Should().Be(WickBridgeErrorCode.Internal);
+        var failure = response.Should().BeOfType<BridgeResponse.Failure>().Subject;
+        failure.ErrorCode.Should().Be(WickBridgeErrorCode.Internal);
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public sealed class InProcessBridgeClientTests
 
         var response = await client.SetPropertyAsync("/root/Player", "Health", 100, TestContext.Current.CancellationToken);
 
-        response.Ok.Should().BeTrue();
+        response.Should().BeOfType<BridgeResponse.Ok>();
         stub.LastRequest.Should().Contain("\"method\":\"set_property\"");
         stub.LastRequest.Should().Contain("\"Health\"");
         stub.LastRequest.Should().Contain("100");

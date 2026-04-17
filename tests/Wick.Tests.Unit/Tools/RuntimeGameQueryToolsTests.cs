@@ -30,7 +30,7 @@ public sealed class RuntimeGameQueryToolsTests
     {
         var stub = Substitute.For<IInProcessBridgeClient>();
         stub.GetSceneTreeAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
-            .Returns(new BridgeResponse(true, MakeElement("{\"name\":\"root\"}"), null, null));
+            .Returns(new BridgeResponse.Ok(MakeElement("{\"name\":\"root\"}")));
         var factory = new InProcessBridgeClientFactory();
         factory.SetForTesting(stub);
         var tools = new RuntimeGameQueryTools(factory);
@@ -46,7 +46,7 @@ public sealed class RuntimeGameQueryToolsTests
     {
         var stub = Substitute.For<IInProcessBridgeClient>();
         stub.GetNodePropertiesAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(new BridgeResponse(true, MakeElement("{}"), null, null));
+            .Returns(new BridgeResponse.Ok(MakeElement("{}")));
         var factory = new InProcessBridgeClientFactory();
         factory.SetForTesting(stub);
         var tools = new RuntimeGameQueryTools(factory);
@@ -62,7 +62,7 @@ public sealed class RuntimeGameQueryToolsTests
     {
         var stub = Substitute.For<IInProcessBridgeClient>();
         stub.CallMethodAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IReadOnlyList<object?>>(), Arg.Any<CancellationToken>())
-            .Returns(new BridgeResponse(true, MakeElement("\"ok\""), null, null));
+            .Returns(new BridgeResponse.Ok(MakeElement("\"ok\"")));
         var factory = new InProcessBridgeClientFactory();
         factory.SetForTesting(stub);
         var tools = new RuntimeGameQueryTools(factory);
@@ -80,7 +80,7 @@ public sealed class RuntimeGameQueryToolsTests
     {
         var stub = Substitute.For<IInProcessBridgeClient>();
         stub.SetPropertyAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<object?>(), Arg.Any<CancellationToken>())
-            .Returns(new BridgeResponse(false, null, WickBridgeErrorCode.PropertyNotFound, "no such prop"));
+            .Returns(new BridgeResponse.Failure(WickBridgeErrorCode.PropertyNotFound, "no such prop"));
         var factory = new InProcessBridgeClientFactory();
         factory.SetForTesting(stub);
         var tools = new RuntimeGameQueryTools(factory);
@@ -97,7 +97,7 @@ public sealed class RuntimeGameQueryToolsTests
     {
         var stub = Substitute.For<IInProcessBridgeClient>();
         stub.FindNodesInGroupAsync("enemies", Arg.Any<CancellationToken>())
-            .Returns(new BridgeResponse(true, MakeElement("[]"), null, null));
+            .Returns(new BridgeResponse.Ok(MakeElement("[]")));
         var factory = new InProcessBridgeClientFactory();
         factory.SetForTesting(stub);
         var tools = new RuntimeGameQueryTools(factory);

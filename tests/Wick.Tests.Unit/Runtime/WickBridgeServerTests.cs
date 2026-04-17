@@ -51,8 +51,8 @@ public sealed class WickBridgeServerTests
         using (server)
         {
             var response = await client.GetSceneTreeAsync(5, TestContext.Current.CancellationToken);
-            response.Ok.Should().BeTrue();
-            response.Result.Should().NotBeNull();
+            var ok = response.Should().BeOfType<BridgeResponse.Ok>().Subject;
+            ok.Result.Should().NotBeNull();
         }
     }
 
@@ -64,8 +64,8 @@ public sealed class WickBridgeServerTests
         using (server)
         {
             var response = await client.GetNodePropertiesAsync("/missing", TestContext.Current.CancellationToken);
-            response.Ok.Should().BeFalse();
-            response.ErrorCode.Should().Be(WickBridgeErrorCode.NodeNotFound);
+            var failure = response.Should().BeOfType<BridgeResponse.Failure>().Subject;
+            failure.ErrorCode.Should().Be(WickBridgeErrorCode.NodeNotFound);
         }
     }
 
@@ -77,8 +77,8 @@ public sealed class WickBridgeServerTests
         using (server)
         {
             var response = await client.CallMethodAsync("/root", "NoSuchMethod", System.Array.Empty<object?>(), TestContext.Current.CancellationToken);
-            response.Ok.Should().BeFalse();
-            response.ErrorCode.Should().Be(WickBridgeErrorCode.MethodNotFound);
+            var failure = response.Should().BeOfType<BridgeResponse.Failure>().Subject;
+            failure.ErrorCode.Should().Be(WickBridgeErrorCode.MethodNotFound);
         }
     }
 

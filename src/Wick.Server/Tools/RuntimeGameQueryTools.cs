@@ -115,22 +115,18 @@ public sealed class RuntimeGameQueryTools
             Code: WickBridgeErrorCode.NoLiveBridge,
             Message: "Running game does not have Wick.Runtime companion installed, or no game is running."));
 
-    private static RuntimeQueryResult Translate(BridgeResponse response)
+    private static RuntimeQueryResult Translate(BridgeResponse response) => response switch
     {
-        if (response.Ok)
-        {
-            return new RuntimeQueryResult(
-                Ok: true,
-                Result: response.Result is JsonElement e ? JsonSerializer.Deserialize<object>(e.GetRawText()) : null,
-                Error: null);
-        }
-        return new RuntimeQueryResult(
+        BridgeResponse.Ok ok => new RuntimeQueryResult(
+            Ok: true,
+            Result: ok.Result is JsonElement e ? JsonSerializer.Deserialize<object>(e.GetRawText()) : null,
+            Error: null),
+        BridgeResponse.Failure f => new RuntimeQueryResult(
             Ok: false,
             Result: null,
-            Error: new RuntimeQueryError(
-                Code: response.ErrorCode ?? WickBridgeErrorCode.Internal,
-                Message: response.ErrorMessage));
-    }
+            Error: new RuntimeQueryError(Code: f.ErrorCode, Message: f.ErrorMessage)),
+        _ => throw new InvalidOperationException($"Unknown BridgeResponse variant: {response.GetType()}"),
+    };
 }
 
 /// <summary>Structured result surface for every runtime query tool.</summary>
