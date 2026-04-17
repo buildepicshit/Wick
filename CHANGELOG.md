@@ -7,8 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Weekly audit fixes in progress — CancellationToken propagation, sync-over-async elimination,
-bare catch narrowing, ILogger injection, MCP protocol stdout safety.
+Phase 2 dogfooding integration work; v1.0-prep items tracked in
+`docs/planning/2026-04-16-phase-3-audit-findings.md`.
+
+## [0.5.0] — 2026-04-16
+
+Phase 3 engineering-excellence + OSS hardening audit. 32/32 audit issues closed across
+9 PRs (#43–#52). 220/220 tests green (208 unit + 12 integration), 0 warnings.
+
+### Added
+
+- `docs/planning/2026-04-16-phase-3-audit-findings.md` — full audit triage doc
+- Drift-detection test (`DefaultToolGroupsTests.AllCatalogToolNames_MatchRegisteredMcpServerToolMethods`) guards the `tool_groups` / `tool_catalog` surface against drift from MCP-SDK-derived names
+- `BuildSeverity`, `BuildTarget`, `WickBridgeErrorCode` enums replace stringly-typed fields
+- `SafeTeardown` helper in `WickRuntime.Uninstall` surfaces teardown failures via Wick envelope
+
+### Changed — honesty-of-surface
+
+- `SceneTools` read methods throw `McpException` on file/node not found instead of fabricating "(error)" nodes inside a valid tree shape (**wire-breaking**)
+- `GodotTools.ProjectInfo` / `SceneNodes` / `SceneList` / `ScriptList` throw `McpException` instead of returning `{error:"..."}` string envelopes (**wire-breaking**)
+- `GetSceneContext` returns `null` until the bridge query is wired, instead of shipping an all-null `SceneContext` stub
+- `RuntimeStatus.EditorConnected` reports actual bridge state via `IGodotBridgeManagerAccessor`
+- DAP handshake `clientID` is `"wick"` (was `"sharp-peak"`)
+- `roslyn_version` in `CSharpStatus` is sourced from the assembly at runtime
+- `DefaultToolGroups` tool names now match MCP-SDK-derived names (`gd_lsp_*`, `cs_lsp_*`, `gd_dap_*`, `runtime_diagnose`)
+- `BridgeResponse` is a sealed discriminated union (`BridgeResponse.Ok` / `.Failure`) instead of a bag of nullable fields
+
+### Changed — security
+
+- `DotNetCli.RunAsync` caps stdout/stderr at 4 MB per stream (malicious `.csproj` output can no longer OOM the server)
+- Subprocess arguments routed through `ProcessStartInfo.ArgumentList` (defeats Windows quote-escaping injection)
+- `DotNetTest --filter` gains a control-character guard
+- `scene_load_resource` (GDScript addon) validates `res://` prefix and rejects `..` segments
+- `ProcessGameLauncher` rejects absolute/`..`-bearing scene paths and blocks dangerous Godot flags (`--script`, `--debug-server`, `--main-pack`, `--path`, `--remote-fs`, plus `=value` variants) in `extraArgs`
+- `WickBridgeHandlers` no longer echoes raw exception messages over the wire; emits type name only, full exception to envelope
+
+### Changed — type design + hygiene
+
+- Analyzer DTOs (`CSharpFileInfo`, `CSharpTypeInfo`, `SceneInfo`, `SceneNode.Properties`, `GDScriptInfo`) expose `IReadOnlyList<T>` / `IReadOnlyDictionary<,>` — no more leaked mutation
+- `HeaderDelimitedRpcClient`, `GodotBridgeClient`, `GodotBridgeManager` swap `Console.Error.WriteLine` for `[LoggerMessage]`-generated `ILogger` calls
+- `LspTools`, `CSharpLspTools`, `DapTools` dispose their client on `AppDomain.ProcessExit`
+- `WickBridgeServer` narrowed bare catch + optional `ILogger`; LSP/DAP receive loops narrowed catches
+- `WickRuntime.Uninstall` catches documented via `SafeTeardown` helper with envelope-surfaced failures
+
+### Fixed
+
+- `GodotExceptionParser` parse failures on blocks with stack frames now surface as `Wick.Unparsed` synthetic exceptions rather than silently dropping
+- `ScriptList` / `ProjectDiscovery.ReadProject` filter by path **segments** (not substrings) so files under directories containing "obj"/"bin" are no longer miscategorized
+- LSP `rootUri` sent as JSON null, not the literal string `"null"`
+- `EditorConnect` target comparison is case-insensitive
+
+### Removed
+
+- `BridgeExceptionSource` (dead — nothing ever pushed to it)
+- `TestResultParser` + `trx_parsing` capability claim (no call sites; capability was advertised but unwired)
+- `ToolGroup.Keywords` (never read anywhere)
+- Dead reflection hack in `HeaderDelimitedRpcClient.Disconnect`
+- Stub `SceneContext` all-null construction path
 
 ## [0.4.0] — 2026-04-12
 
