@@ -37,8 +37,6 @@ builder.Services.AddSingleton(activeGroups);
 // --- Sub-spec A services (Tier 1 exception pipeline) ---
 builder.Services.AddSingleton<ExceptionBuffer>();
 builder.Services.AddSingleton<LogBuffer>();
-builder.Services.AddSingleton<BridgeExceptionSource>();
-builder.Services.AddSingleton<IExceptionSource>(sp => sp.GetRequiredService<BridgeExceptionSource>());
 builder.Services.AddSingleton<IRoslynWorkspaceService, RoslynWorkspaceService>();
 builder.Services.AddSingleton<IDotNetCli, DefaultDotNetCli>();
 builder.Services.AddSingleton<BuildTools>();

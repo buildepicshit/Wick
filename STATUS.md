@@ -32,7 +32,7 @@ Wick is a native .NET 10 Model Context Protocol server that captures unhandled C
 
 Phase 1 (feature completeness) shipped. All v1 sub-specs are wired and green:
 
-- **Sub-spec A** — runtime exception pipeline (`BridgeExceptionSource`, `ProcessExceptionSource`, `ExceptionPipeline` hosted service, Roslyn enrichment) + `runtime_diagnose` fan-out aggregator
+- **Sub-spec A** — runtime exception pipeline (`ProcessExceptionSource`, `ExceptionPipeline` hosted service, Roslyn enrichment) + `runtime_diagnose` fan-out aggregator
 - **Sub-spec B** — tool group system (5 pillars: `core` / `runtime` / `csharp` / `scene` / `build`) + runtime tools (`runtime_status`, `runtime_get_log_tail`, `runtime_get_exceptions`, `runtime_launch_game`, `runtime_stop_game`)
 - **Sub-spec C** — scene pillar (7 tools, headless `godot --script` dispatch)
 - **Sub-spec D** — C# analysis tools (`c_sharp_find_symbol`, `c_sharp_find_references`, `c_sharp_get_member_signatures`)
