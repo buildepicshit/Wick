@@ -80,12 +80,34 @@ public sealed class WickBridgeHandlers
         }
         catch (TimeoutException ex)
         {
-            return ErrorResult("internal", ex.Message);
+            return ErrorResult("internal", ScrubExceptionMessage(ex));
         }
         catch (Exception ex)
         {
-            return ErrorResult("internal", ex.Message);
+            return ErrorResult("internal", ScrubExceptionMessage(ex));
         }
+    }
+
+    /// <summary>
+    /// Returns an exception-type-name-only string for the error message echoed back to
+    /// the MCP client. Raw exception messages can contain secrets (API keys in
+    /// "Failed to auth to X", connection strings, user file paths). The full exception
+    /// is emitted to the Wick envelope stream so server-side logging still sees it;
+    /// the wire response carries only the type name.
+    /// </summary>
+    private static string ScrubExceptionMessage(Exception ex)
+    {
+        try
+        {
+            WickEnvelope.WriteEnvelope("exception_in_handler",
+                new { type = ex.GetType().FullName, message = ex.Message, stack = ex.StackTrace });
+        }
+        catch
+        {
+            // Envelope write is best-effort. Never let it interfere with returning a
+            // clean response.
+        }
+        return $"Bridge handler threw {ex.GetType().Name}. See Wick server logs for details.";
     }
 
     private T OnMain<T>(Func<T> work)
