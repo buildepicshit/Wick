@@ -47,6 +47,9 @@ public sealed partial class ProcessGameLauncher : IGameLauncher
 
     public LaunchedGame Launch(string? scene, bool headless, IReadOnlyList<string> extraArgs)
     {
+        if (!string.IsNullOrEmpty(scene)) ValidateScenePath(scene);
+        ValidateExtraArgs(extraArgs);
+
         var startInfo = new ProcessStartInfo
         {
             FileName = _godotBinaryPath,
@@ -120,5 +123,55 @@ public sealed partial class ProcessGameLauncher : IGameLauncher
         };
 
         return new LaunchedGame(pid, startedAt, onStop);
+    }
+
+    /// <summary>
+    /// Godot CLI flags that let the caller execute arbitrary code or alter debug surface
+    /// dangerously. Blocked so an MCP agent can't pass <c>--script /tmp/evil.gd</c>
+    /// through <c>extraArgs</c> to run code outside the project tree.
+    /// </summary>
+    private static readonly HashSet<string> BlockedExtraFlags = new(StringComparer.Ordinal)
+    {
+        "--script",
+        "-s",
+        "--debug-server",
+        "--debug-collisions",
+        "--gpu-abort",
+        "--main-pack",
+        "--path",          // already set by us
+        "--remote-fs",
+        "--remote-fs-password",
+    };
+
+    private static void ValidateScenePath(string scene)
+    {
+        if (Path.IsPathRooted(scene))
+        {
+            throw new ArgumentException(
+                $"scene must be project-relative, not an absolute path: '{scene}'",
+                nameof(scene));
+        }
+        if (scene.Contains("..", StringComparison.Ordinal))
+        {
+            throw new ArgumentException(
+                $"scene must not contain '..' path segments: '{scene}'", nameof(scene));
+        }
+    }
+
+    private static void ValidateExtraArgs(IReadOnlyList<string> extraArgs)
+    {
+        foreach (var arg in extraArgs)
+        {
+            // Block flag=value form as well (e.g. --script=/tmp/evil.gd)
+            var flagToken = arg.Contains('=', StringComparison.Ordinal)
+                ? arg[..arg.IndexOf('=', StringComparison.Ordinal)]
+                : arg;
+            if (BlockedExtraFlags.Contains(flagToken))
+            {
+                throw new ArgumentException(
+                    $"extraArgs may not contain the '{flagToken}' flag — it lets callers execute arbitrary code.",
+                    nameof(extraArgs));
+            }
+        }
     }
 }
