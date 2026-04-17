@@ -228,6 +228,13 @@ func _load_resource(params: Dictionary) -> void:
 		_error("invalid_args", "load_resource requires 'scene_path', 'property', and 'resource_path'")
 		return
 
+	# resource_path must be a project-relative res:// URI. Reject anything that could
+	# reach outside the project tree (file://, user://, absolute paths, ..).
+	if not _is_safe_res_path(resource_path):
+		_error("invalid_args",
+			"resource_path must be a project-local res:// path without '..': '%s'" % resource_path)
+		return
+
 	var packed := _load_scene(scene_path)
 	if packed == null:
 		return
@@ -259,6 +266,15 @@ func _load_resource(params: Dictionary) -> void:
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+
+func _is_safe_res_path(path: String) -> bool:
+	# Must start with res://, must not contain .., must not contain other URI schemes.
+	if not path.begins_with("res://"):
+		return false
+	if path.contains(".."):
+		return false
+	return true
 
 
 func _instantiate_node(type_name: String) -> Node:
