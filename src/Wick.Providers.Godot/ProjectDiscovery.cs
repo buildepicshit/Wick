@@ -77,10 +77,32 @@ public static class ProjectDiscovery
             Name = projectName ?? Path.GetFileName(projectDir),
             MainScene = mainScene,
             HasCSharp = hasCSharp,
-            SceneCount = Directory.GetFiles(projectDir, "*.tscn", SearchOption.AllDirectories).Length,
-            ScriptCount = Directory.GetFiles(projectDir, "*.gd", SearchOption.AllDirectories).Length +
-                          Directory.GetFiles(projectDir, "*.cs", SearchOption.AllDirectories).Length,
+            SceneCount = Directory.GetFiles(projectDir, "*.tscn", SearchOption.AllDirectories)
+                .Count(p => !IsInBuildOrCacheDir(p)),
+            ScriptCount = Directory.GetFiles(projectDir, "*.gd", SearchOption.AllDirectories)
+                              .Count(p => !IsInBuildOrCacheDir(p)) +
+                          Directory.GetFiles(projectDir, "*.cs", SearchOption.AllDirectories)
+                              .Count(p => !IsInBuildOrCacheDir(p)),
         };
+    }
+
+    /// <summary>
+    /// True when a path has a <c>bin</c>, <c>obj</c>, or <c>.godot</c> segment —
+    /// build output or editor cache that should not count as project source.
+    /// </summary>
+    internal static bool IsInBuildOrCacheDir(string path)
+    {
+        var segments = path.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar });
+        foreach (var seg in segments)
+        {
+            if (string.Equals(seg, "bin", StringComparison.Ordinal) ||
+                string.Equals(seg, "obj", StringComparison.Ordinal) ||
+                string.Equals(seg, ".godot", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void FindProjectsRecursive(string dir, List<GodotProject> projects, int depth, int maxDepth)

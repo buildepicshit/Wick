@@ -120,7 +120,7 @@ public static class GodotTools
             .Select(p => new { path = Path.GetRelativePath(projectPath, p).Replace('\\', '/'), language = "GDScript" });
 
         var csScripts = Directory.GetFiles(projectPath, "*.cs", SearchOption.AllDirectories)
-            .Where(p => !p.Contains("obj") && !p.Contains("bin"))
+            .Where(p => !ProjectDiscovery.IsInBuildOrCacheDir(p))
             .Select(p => new { path = Path.GetRelativePath(projectPath, p).Replace('\\', '/'), language = "C#" });
 
         var all = gdScripts.Concat(csScripts).OrderBy(s => s.path).ToList();
