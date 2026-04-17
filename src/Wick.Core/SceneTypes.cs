@@ -8,7 +8,7 @@ namespace Wick.Core;
 public sealed record SceneTreeResult(
     string ScenePath,
     int NodeCount,
-    SceneTreeNode Root);
+    SceneTreeNode? Root);
 
 public sealed record SceneTreeNode(
     string Name,
