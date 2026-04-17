@@ -106,9 +106,12 @@ public sealed class ProcessExceptionSource : IExceptionSource
                                     // Flush any partially-accumulated legacy error block first.
                                     if (inErrorBlock && errorBlock.Count > 0)
                                     {
-                                        var parsedLegacy = GodotExceptionParser.Parse(string.Join('\n', errorBlock));
+                                        var joinedLegacy = string.Join('\n', errorBlock);
+                                        var parsedLegacy = GodotExceptionParser.Parse(joinedLegacy);
                                         if (parsedLegacy is not null)
                                             yield return parsedLegacy;
+                                        else if (errorBlock.Count > 1)
+                                            yield return MakeUnparsed(errorBlock[0], joinedLegacy);
                                         errorBlock.Clear();
                                         inErrorBlock = false;
                                     }
@@ -139,9 +142,12 @@ public sealed class ProcessExceptionSource : IExceptionSource
                 // Flush any previous error block
                 if (inErrorBlock && errorBlock.Count > 0)
                 {
-                    var parsed = GodotExceptionParser.Parse(string.Join('\n', errorBlock));
+                    var joined = string.Join('\n', errorBlock);
+                    var parsed = GodotExceptionParser.Parse(joined);
                     if (parsed is not null)
                         yield return parsed;
+                    else if (errorBlock.Count > 1)
+                        yield return MakeUnparsed(errorBlock[0], joined);
                     errorBlock.Clear();
                 }
 
@@ -165,9 +171,12 @@ public sealed class ProcessExceptionSource : IExceptionSource
                 else
                 {
                     // End of error block — flush
-                    var parsed = GodotExceptionParser.Parse(string.Join('\n', errorBlock));
+                    var joined = string.Join('\n', errorBlock);
+                    var parsed = GodotExceptionParser.Parse(joined);
                     if (parsed is not null)
                         yield return parsed;
+                    else if (errorBlock.Count > 1)
+                        yield return MakeUnparsed(errorBlock[0], joined);
                     errorBlock.Clear();
                     inErrorBlock = false;
                 }
@@ -177,10 +186,31 @@ public sealed class ProcessExceptionSource : IExceptionSource
         // Flush any remaining error block
         if (inErrorBlock && errorBlock.Count > 0)
         {
-            var parsed = GodotExceptionParser.Parse(string.Join('\n', errorBlock));
+            var joined = string.Join('\n', errorBlock);
+            var parsed = GodotExceptionParser.Parse(joined);
             if (parsed is not null)
                 yield return parsed;
+            else if (errorBlock.Count > 1)
+                yield return MakeUnparsed(errorBlock[0], joined);
         }
+    }
+
+    /// <summary>
+    /// Surfaces an error block that looks like an exception but didn't match
+    /// the parser. Keeps the raw text so developers can still see the failure
+    /// when Godot's stderr format drifts.
+    /// </summary>
+    private static RawException MakeUnparsed(string firstLine, string rawText)
+    {
+        const int messageMax = 200;
+        var msg = firstLine.Length > messageMax ? firstLine[..messageMax] : firstLine;
+        return new RawException
+        {
+            Type = "Wick.Unparsed",
+            Message = msg,
+            RawText = rawText,
+            Frames = [],
+        };
     }
 
     private static async IAsyncEnumerable<string> ReadLinesAsync(
