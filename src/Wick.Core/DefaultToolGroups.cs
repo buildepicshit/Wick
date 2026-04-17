@@ -21,7 +21,6 @@ public static class DefaultToolGroups
                 "gdscript_hover", "gdscript_symbols", "gdscript_definition",
                 "tool_catalog", "tool_groups", "tool_reset",
             ],
-            Keywords = ["core", "project", "file", "node", "base"],
             IsCore = true,
         },
         new ToolGroup
@@ -38,7 +37,6 @@ public static class DefaultToolGroups
                 "runtime_query_scene_tree", "runtime_query_node_properties",
                 "runtime_call_method", "runtime_set_property", "runtime_find_nodes_in_group",
             ],
-            Keywords = ["runtime", "exception", "log", "launch", "debug", "editor", "dap", "live"],
         },
         new ToolGroup
         {
@@ -50,7 +48,6 @@ public static class DefaultToolGroups
                 "c_sharp_get_member_signatures",
                 "csharp_hover", "csharp_symbols", "csharp_definition",
             ],
-            Keywords = ["csharp", "roslyn", "lsp", "analysis"],
         },
         new ToolGroup
         {
@@ -61,7 +58,6 @@ public static class DefaultToolGroups
                 "scene_create", "scene_add_node", "scene_set_node_properties",
                 "scene_save", "scene_load_resource",
             ],
-            Keywords = ["scene", "tscn", "manipulation", "tree"],
         },
         new ToolGroup
         {
@@ -72,7 +68,6 @@ public static class DefaultToolGroups
                 "build_diagnose",
                 "nu_get_add", "nu_get_remove", "nu_get_list",
             ],
-            Keywords = ["build", "test", "dotnet", "msbuild", "nuget", "package"],
         },
     ];
 }
