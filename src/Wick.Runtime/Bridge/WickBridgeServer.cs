@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Wick.Runtime.Bridge;
 
@@ -21,6 +22,7 @@ namespace Wick.Runtime.Bridge;
 public sealed class WickBridgeServer : IDisposable
 {
     private readonly WickBridgeHandlers _handlers;
+    private readonly ILogger<WickBridgeServer>? _logger;
     private TcpListener? _listener;
     private CancellationTokenSource? _cts;
     private Task? _acceptLoop;
@@ -28,9 +30,10 @@ public sealed class WickBridgeServer : IDisposable
     /// <summary>The port the server is actually bound to. Resolved after <see cref="Start"/>.</summary>
     public int Port { get; private set; }
 
-    public WickBridgeServer(WickBridgeHandlers handlers)
+    public WickBridgeServer(WickBridgeHandlers handlers, ILogger<WickBridgeServer>? logger = null)
     {
         _handlers = handlers;
+        _logger = logger;
     }
 
     /// <summary>
@@ -150,9 +153,18 @@ public sealed class WickBridgeServer : IDisposable
                 var responseLine = JsonSerializer.Serialize(response, WickEnvelope.Options);
                 await writer.WriteLineAsync(responseLine.AsMemory(), ct).ConfigureAwait(false);
             }
-            catch
+            catch (OperationCanceledException)
             {
-                // Connection-level failures are best-effort; we close and move on.
+                // Expected during shutdown — client was cancelled.
+            }
+            catch (Exception ex) when (ex is IOException or ObjectDisposedException or SocketException)
+            {
+                // Expected on socket teardown (client closed mid-read/write).
+            }
+            catch (Exception ex)
+            {
+                // Unexpected — log so we learn about it, but don't take the server down.
+                _logger?.LogWarning(ex, "Bridge client handler failed");
             }
         }
     }
