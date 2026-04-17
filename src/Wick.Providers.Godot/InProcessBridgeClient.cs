@@ -21,15 +21,20 @@ public interface IInProcessBridgeClient
 }
 
 /// <summary>
-/// Uniform response shape returned by every bridge RPC. <see cref="Ok"/> mirrors the wire
-/// protocol; when false, <see cref="ErrorCode"/> is one of the closed set defined in
-/// <see cref="WickBridgeErrorCode"/>.
+/// Uniform response shape returned by every bridge RPC. Internal type — does not hit the
+/// MCP wire. Union-shaped: consumers pattern-match on <see cref="Ok"/> vs
+/// <see cref="Failure"/>. The old <c>bool Ok + nullable fields</c> shape allowed illegal
+/// states (Ok=true with ErrorCode set, Ok=false with ErrorCode=null, etc.); the sealed
+/// hierarchy makes them unrepresentable.
 /// </summary>
-public sealed record BridgeResponse(
-    bool Ok,
-    JsonElement? Result,
-    WickBridgeErrorCode? ErrorCode,
-    string? ErrorMessage);
+public abstract record BridgeResponse
+{
+    /// <summary>Successful response. <see cref="Result"/> carries the RPC payload.</summary>
+    public sealed record Ok(JsonElement? Result) : BridgeResponse;
+
+    /// <summary>Failed response. Guaranteed <see cref="ErrorCode"/>; message may be null if the transport didn't provide one.</summary>
+    public sealed record Failure(WickBridgeErrorCode ErrorCode, string? ErrorMessage) : BridgeResponse;
+}
 
 /// <summary>Closed set of bridge error codes. Serialized as lowercase snake_case on the wire.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<WickBridgeErrorCode>))]
@@ -126,11 +131,11 @@ public sealed class InProcessBridgeClient : IInProcessBridgeClient
         }
         catch (SocketException ex)
         {
-            return new BridgeResponse(false, null, WickBridgeErrorCode.ConnectionRefused, ex.Message);
+            return new BridgeResponse.Failure(WickBridgeErrorCode.ConnectionRefused, ex.Message);
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
-            return new BridgeResponse(false, null, WickBridgeErrorCode.Timeout, "Connect timed out");
+            return new BridgeResponse.Failure(WickBridgeErrorCode.Timeout, "Connect timed out");
         }
 
         using (client)
@@ -152,20 +157,20 @@ public sealed class InProcessBridgeClient : IInProcessBridgeClient
                 var responseLine = await reader.ReadLineAsync(timeoutCts.Token).ConfigureAwait(false);
                 if (responseLine is null)
                 {
-                    return new BridgeResponse(false, null, WickBridgeErrorCode.Internal, "Empty response");
+                    return new BridgeResponse.Failure(WickBridgeErrorCode.Internal, "Empty response");
                 }
 
                 using var doc = JsonDocument.Parse(responseLine);
                 var root = doc.RootElement;
                 if (root.ValueKind != JsonValueKind.Object)
                 {
-                    return new BridgeResponse(false, null, WickBridgeErrorCode.Internal, "Malformed response (not object)");
+                    return new BridgeResponse.Failure(WickBridgeErrorCode.Internal, "Malformed response (not object)");
                 }
                 var ok = root.TryGetProperty("ok", out var okEl) && okEl.ValueKind == JsonValueKind.True;
                 if (ok)
                 {
                     var result = root.TryGetProperty("result", out var r) ? (JsonElement?)r.Clone() : null;
-                    return new BridgeResponse(true, result, null, null);
+                    return new BridgeResponse.Ok(result);
                 }
 
                 string? code = null;
@@ -175,23 +180,23 @@ public sealed class InProcessBridgeClient : IInProcessBridgeClient
                     if (errEl.TryGetProperty("code", out var c) && c.ValueKind == JsonValueKind.String) code = c.GetString();
                     if (errEl.TryGetProperty("message", out var m) && m.ValueKind == JsonValueKind.String) msg = m.GetString();
                 }
-                return new BridgeResponse(false, null, WickBridgeErrorCodeParsing.Parse(code), msg);
+                return new BridgeResponse.Failure(WickBridgeErrorCodeParsing.Parse(code), msg);
             }
             catch (OperationCanceledException) when (!ct.IsCancellationRequested)
             {
-                return new BridgeResponse(false, null, WickBridgeErrorCode.Timeout, "Request timed out");
+                return new BridgeResponse.Failure(WickBridgeErrorCode.Timeout, "Request timed out");
             }
             catch (JsonException ex)
             {
-                return new BridgeResponse(false, null, WickBridgeErrorCode.Internal, $"Malformed response JSON: {ex.Message}");
+                return new BridgeResponse.Failure(WickBridgeErrorCode.Internal, $"Malformed response JSON: {ex.Message}");
             }
             catch (IOException ex)
             {
-                return new BridgeResponse(false, null, WickBridgeErrorCode.Internal, ex.Message);
+                return new BridgeResponse.Failure(WickBridgeErrorCode.Internal, ex.Message);
             }
             catch (SocketException ex)
             {
-                return new BridgeResponse(false, null, WickBridgeErrorCode.ConnectionRefused, ex.Message);
+                return new BridgeResponse.Failure(WickBridgeErrorCode.ConnectionRefused, ex.Message);
             }
         }
     }
