@@ -32,13 +32,14 @@ public sealed class CSharpLspClient : IDisposable
                 var startInfo = new ProcessStartInfo
                 {
                     FileName = OperatingSystem.IsWindows() ? "csharp-ls.exe" : "csharp-ls",
-                    Arguments = $"--solution \"{solutionPath}\"",
                     RedirectStandardInput = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
+                startInfo.ArgumentList.Add("--solution");
+                startInfo.ArgumentList.Add(solutionPath);
 
                 _process = Process.Start(startInfo);
                 if (_process == null)
