@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using ModelContextProtocol;
 using ModelContextProtocol.Server;
 using Wick.Core;
 using Wick.Providers.Godot;
@@ -33,19 +34,14 @@ public sealed class SceneTools
         "Returns the full scene tree as structured JSON. Reads the .tscn file directly — " +
         "no running Godot instance needed. Returns a hierarchical tree with node name, type, " +
         "path, and optional properties per node. Use max_depth to cap recursion on huge scenes.")]
-#pragma warning disable CA1822
-    public SceneTreeResult SceneGetTree(
+    public static SceneTreeResult SceneGetTree(
         [Description("Absolute or project-relative path to the .tscn file.")] string scenePath,
         [Description("Include properties for each node (default false).")] bool includeProperties = false,
         [Description("Max tree depth to return (0 = unlimited). Default 0.")] int maxDepth = 0)
     {
         if (!File.Exists(scenePath))
         {
-            return new SceneTreeResult(
-                ScenePath: scenePath,
-                NodeCount: 0,
-                Root: new SceneTreeNode("(error)", "scene_not_found",
-                    null, null, Array.Empty<SceneTreeNode>()));
+            throw new McpException($"Scene file not found: {scenePath}");
         }
 
         var content = File.ReadAllText(scenePath);
@@ -56,8 +52,7 @@ public sealed class SceneTools
             return new SceneTreeResult(
                 ScenePath: scenePath,
                 NodeCount: 0,
-                Root: new SceneTreeNode("(empty)", "empty_scene",
-                    null, null, Array.Empty<SceneTreeNode>()));
+                Root: null);
         }
 
         var root = BuildTree(scene, includeProperties, maxDepth);
@@ -66,25 +61,18 @@ public sealed class SceneTools
             NodeCount: scene.Nodes.Count,
             Root: root);
     }
-#pragma warning restore CA1822
 
     [McpServerTool, Description(
         "Returns all properties of a specific node in a .tscn scene file. " +
         "Uses the node's path relative to root (e.g. \"Player/Camera3D\", or \".\" for root). " +
-        "Returns node_not_found error with available sibling hints if the path doesn't match.")]
-#pragma warning disable CA1822
-    public NodePropertiesResult SceneGetNodeProperties(
+        "Throws node_not_found with the list of available paths if the path doesn't match.")]
+    public static NodePropertiesResult SceneGetNodeProperties(
         [Description("Absolute or project-relative path to the .tscn file.")] string scenePath,
         [Description("Node path relative to root. Use \".\" for root, \"Child\" for direct child, \"Child/Grandchild\" for nested.")] string nodePath)
     {
         if (!File.Exists(scenePath))
         {
-            return new NodePropertiesResult(
-                ScenePath: scenePath,
-                NodePath: nodePath,
-                NodeName: "(error)",
-                NodeType: "scene_not_found",
-                Properties: new Dictionary<string, string>());
+            throw new McpException($"Scene file not found: {scenePath}");
         }
 
         var content = File.ReadAllText(scenePath);
@@ -93,18 +81,9 @@ public sealed class SceneTools
         var node = FindNodeByPath(scene, nodePath);
         if (node is null)
         {
-            // Build sibling hints: list available node paths
-            var available = scene.Nodes.Select(n => ComputeNodePath(n)).ToList();
-            var hints = new Dictionary<string, string>
-            {
-                ["available_paths"] = string.Join(", ", available),
-            };
-            return new NodePropertiesResult(
-                ScenePath: scenePath,
-                NodePath: nodePath,
-                NodeName: "(error)",
-                NodeType: "node_not_found",
-                Properties: hints);
+            var available = string.Join(", ", scene.Nodes.Select(n => ComputeNodePath(n)));
+            throw new McpException(
+                $"Node not found: '{nodePath}' in {scenePath}. Available paths: {available}");
         }
 
         return new NodePropertiesResult(
@@ -114,7 +93,6 @@ public sealed class SceneTools
             NodeType: node.Type,
             Properties: node.Properties);
     }
-#pragma warning restore CA1822
 
     // ── Mutation tools (headless Godot dispatch) ─────────────────────────────
 

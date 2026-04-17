@@ -1,3 +1,4 @@
+using ModelContextProtocol;
 using Wick.Core;
 using Wick.Providers.Godot;
 using Wick.Server.Tools;
@@ -78,11 +79,11 @@ public class SceneToolsTests
         var path = WriteTempTscn(SimpleTscn);
         try
         {
-            var tools = new SceneTools(new StubDispatchClient());
-            var result = tools.SceneGetTree(path);
+            var result = SceneTools.SceneGetTree(path);
 
             result.NodeCount.Should().Be(4);
-            result.Root.Name.Should().Be("World");
+            result.Root.Should().NotBeNull();
+            result.Root!.Name.Should().Be("World");
             result.Root.Type.Should().Be("Node3D");
             result.Root.Children.Should().HaveCount(2); // Player, Light
             result.Root.Children.Should().Contain(c => c.Name == "Player");
@@ -104,11 +105,11 @@ public class SceneToolsTests
         var path = WriteTempTscn(DeepTscn);
         try
         {
-            var tools = new SceneTools(new StubDispatchClient());
-            var result = tools.SceneGetTree(path, maxDepth: 2);
+            var result = SceneTools.SceneGetTree(path, maxDepth: 2);
 
             // Depth 1 = Root, Depth 2 = A (but A's children should be empty due to cap)
-            result.Root.Name.Should().Be("Root");
+            result.Root.Should().NotBeNull();
+            result.Root!.Name.Should().Be("Root");
             result.Root.Children.Should().HaveCount(1);
             result.Root.Children[0].Name.Should().Be("A");
             result.Root.Children[0].Children.Should().BeEmpty();
@@ -120,13 +121,11 @@ public class SceneToolsTests
     }
 
     [Fact]
-    public void SceneGetTree_NonExistentFile_ReturnsError()
+    public void SceneGetTree_NonExistentFile_ThrowsMcpException()
     {
-        var tools = new SceneTools(new StubDispatchClient());
-        var result = tools.SceneGetTree("/nonexistent/path.tscn");
-
-        result.NodeCount.Should().Be(0);
-        result.Root.Type.Should().Be("scene_not_found");
+        FluentActions.Invoking(() => SceneTools.SceneGetTree("/nonexistent/path.tscn"))
+            .Should().Throw<McpException>()
+            .WithMessage("*not found*");
     }
 
     [Fact]
@@ -135,10 +134,10 @@ public class SceneToolsTests
         var path = WriteTempTscn(SimpleTscn);
         try
         {
-            var tools = new SceneTools(new StubDispatchClient());
-            var result = tools.SceneGetTree(path, includeProperties: true);
+            var result = SceneTools.SceneGetTree(path, includeProperties: true);
 
-            var player = result.Root.Children.First(c => c.Name == "Player");
+            result.Root.Should().NotBeNull();
+            var player = result.Root!.Children.First(c => c.Name == "Player");
             player.Properties.Should().NotBeNull();
             player.Properties.Should().ContainKey("speed");
 
@@ -158,11 +157,11 @@ public class SceneToolsTests
         var path = WriteTempTscn(SimpleTscn);
         try
         {
-            var tools = new SceneTools(new StubDispatchClient());
-            var result = tools.SceneGetTree(path, includeProperties: false);
+            var result = SceneTools.SceneGetTree(path, includeProperties: false);
 
             // Root (World) has no properties, so null regardless
-            result.Root.Properties.Should().BeNull();
+            result.Root.Should().NotBeNull();
+            result.Root!.Properties.Should().BeNull();
             // Light has no properties either
             var light = result.Root.Children.First(c => c.Name == "Light");
             light.Properties.Should().BeNull();
@@ -183,8 +182,7 @@ public class SceneToolsTests
         var path = WriteTempTscn(SimpleTscn);
         try
         {
-            var tools = new SceneTools(new StubDispatchClient());
-            var result = tools.SceneGetNodeProperties(path, "Player");
+            var result = SceneTools.SceneGetNodeProperties(path, "Player");
 
             result.NodeName.Should().Be("Player");
             result.NodeType.Should().Be("CharacterBody3D");
@@ -202,8 +200,7 @@ public class SceneToolsTests
         var path = WriteTempTscn(SimpleTscn);
         try
         {
-            var tools = new SceneTools(new StubDispatchClient());
-            var result = tools.SceneGetNodeProperties(path, ".");
+            var result = SceneTools.SceneGetNodeProperties(path, ".");
 
             result.NodeName.Should().Be("World");
             result.NodeType.Should().Be("Node3D");
@@ -220,8 +217,7 @@ public class SceneToolsTests
         var path = WriteTempTscn(SimpleTscn);
         try
         {
-            var tools = new SceneTools(new StubDispatchClient());
-            var result = tools.SceneGetNodeProperties(path, "Player/Camera");
+            var result = SceneTools.SceneGetNodeProperties(path, "Player/Camera");
 
             result.NodeName.Should().Be("Camera");
             result.NodeType.Should().Be("Camera3D");
@@ -234,17 +230,15 @@ public class SceneToolsTests
     }
 
     [Fact]
-    public void SceneGetNodeProperties_InvalidPath_ReturnsNodeNotFound()
+    public void SceneGetNodeProperties_InvalidPath_ThrowsWithAvailablePaths()
     {
         var path = WriteTempTscn(SimpleTscn);
         try
         {
-            var tools = new SceneTools(new StubDispatchClient());
-            var result = tools.SceneGetNodeProperties(path, "NonExistent");
-
-            result.NodeType.Should().Be("node_not_found");
-            result.Properties.Should().ContainKey("available_paths");
-            result.Properties["available_paths"].Should().Contain("Player");
+            FluentActions.Invoking(() => SceneTools.SceneGetNodeProperties(path, "NonExistent"))
+                .Should().Throw<McpException>()
+                .WithMessage("*Node not found*")
+                .WithMessage("*Player*");
         }
         finally
         {
@@ -253,12 +247,11 @@ public class SceneToolsTests
     }
 
     [Fact]
-    public void SceneGetNodeProperties_NonExistentScene_ReturnsError()
+    public void SceneGetNodeProperties_NonExistentScene_ThrowsMcpException()
     {
-        var tools = new SceneTools(new StubDispatchClient());
-        var result = tools.SceneGetNodeProperties("/nonexistent.tscn", ".");
-
-        result.NodeType.Should().Be("scene_not_found");
+        FluentActions.Invoking(() => SceneTools.SceneGetNodeProperties("/nonexistent.tscn", "."))
+            .Should().Throw<McpException>()
+            .WithMessage("*not found*");
     }
 
     // ══════════════════════════════════════════════════════════════════════════
