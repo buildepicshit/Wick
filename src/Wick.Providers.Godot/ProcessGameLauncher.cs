@@ -45,6 +45,77 @@ public sealed partial class ProcessGameLauncher : IGameLauncher
         Message = "Error while stopping game process")]
     private partial void LogStopError(Exception ex);
 
+    /// <inheritdoc />
+    public GodotBinaryProbe ProbeGodotBinary()
+    {
+        var configured = _godotBinaryPath;
+
+        if (string.IsNullOrWhiteSpace(configured))
+        {
+            return new GodotBinaryProbe(
+                Configured: configured ?? string.Empty,
+                Resolved: null,
+                Found: false,
+                Error: "WICK_GODOT_BIN is unset and no fallback was configured.");
+        }
+
+        // If the configured path looks like an absolute or relative file path
+        // (contains a separator), check the filesystem directly.
+        if (configured.IndexOfAny([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar]) >= 0)
+        {
+            var full = Path.GetFullPath(configured);
+            if (File.Exists(full))
+            {
+                return new GodotBinaryProbe(configured, full, true, null);
+            }
+            return new GodotBinaryProbe(
+                Configured: configured,
+                Resolved: null,
+                Found: false,
+                Error: $"WICK_GODOT_BIN points to '{configured}' but no file exists at '{full}'.");
+        }
+
+        // Bare name (e.g. "godot") — walk PATH.
+        var resolved = ResolveOnPath(configured);
+        if (resolved is not null)
+        {
+            return new GodotBinaryProbe(configured, resolved, true, null);
+        }
+
+        var unsetHint = string.Equals(configured, "godot", StringComparison.Ordinal)
+            ? " (WICK_GODOT_BIN appears unset; using the default 'godot' fallback)"
+            : string.Empty;
+        return new GodotBinaryProbe(
+            Configured: configured,
+            Resolved: null,
+            Found: false,
+            Error: $"'{configured}' was not found on PATH{unsetHint}. Set WICK_GODOT_BIN to the absolute path of your Godot mono/.NET binary.");
+    }
+
+    private static string? ResolveOnPath(string name)
+    {
+        var path = Environment.GetEnvironmentVariable("PATH");
+        if (string.IsNullOrEmpty(path)) return null;
+
+        var isWindows = OperatingSystem.IsWindows();
+        var separator = isWindows ? ';' : ':';
+        var extensions = isWindows
+            ? (Environment.GetEnvironmentVariable("PATHEXT") ?? ".EXE;.CMD;.BAT;.COM").Split(';', StringSplitOptions.RemoveEmptyEntries)
+            : [string.Empty];
+
+        foreach (var dir in path.Split(separator, StringSplitOptions.RemoveEmptyEntries))
+        {
+            foreach (var ext in extensions)
+            {
+                var trimmedDir = dir.Trim().Trim('"');
+                if (trimmedDir.Length == 0) continue;
+                var candidate = Path.Combine(trimmedDir, name + ext);
+                if (File.Exists(candidate)) return candidate;
+            }
+        }
+        return null;
+    }
+
     public LaunchedGame Launch(string? scene, bool headless, IReadOnlyList<string> extraArgs)
     {
         if (!string.IsNullOrEmpty(scene)) ValidateScenePath(scene);

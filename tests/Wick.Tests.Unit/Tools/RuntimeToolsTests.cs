@@ -14,10 +14,16 @@ public sealed class RuntimeToolsTests
         public int NextPid { get; set; } = 1000;
         public bool StopWasCalled { get; private set; }
 
+        // Test default: pretend the binary resolves so RuntimeLaunchGame's pre-flight
+        // succeeds. Tests that exercise the unresolved path can flip Probe directly.
+        public GodotBinaryProbe Probe { get; set; } = new("godot", "/usr/bin/godot", true, null);
+
         public LaunchedGame Launch(string? scene, bool headless, IReadOnlyList<string> extraArgs)
         {
             return new LaunchedGame(NextPid, DateTimeOffset.UtcNow, () => StopWasCalled = true);
         }
+
+        public GodotBinaryProbe ProbeGodotBinary() => Probe;
     }
 
     private static RuntimeTools MakeTools(
@@ -203,7 +209,8 @@ public sealed class RuntimeToolsTests
         launcher.NextPid = 2;
         var second = tools.RuntimeLaunchGame(null, true, null);
 
-        second.Error.Should().Be("game_already_running");
+        second.Status.Should().Be("already_running");
+        second.Error.Should().StartWith("game_already_running");
         second.Pid.Should().Be(1);
     }
 

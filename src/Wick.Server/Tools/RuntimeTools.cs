@@ -37,17 +37,25 @@ public sealed class RuntimeTools
 
     [McpServerTool, Description(
         "Returns the current state of the Wick runtime: whether a game is running, " +
-        "exception/log buffer counts, and the resolved active tool groups.")]
+        "exception/log buffer counts, the resolved active tool groups, and whether the " +
+        "configured Godot binary (WICK_GODOT_BIN) actually resolves on disk / PATH. If " +
+        "GodotBinaryFound is false, runtime_launch_game cannot succeed and the error " +
+        "field explains why.")]
     public RuntimeStatusResult RuntimeStatus()
     {
         var gameStatus = _gameProcess.Status;
+        var probe = _launcher.ProbeGodotBinary();
         return new RuntimeStatusResult(
             GameRunning: gameStatus.IsRunning,
             Pid: gameStatus.Pid,
             EditorConnected: _bridgeAccessor?.IsEditorConnected ?? false,
             ExceptionCount: _exceptionBuffer.Count,
             LogLineCount: _logBuffer.Count,
-            ActiveGroups: _activeGroups.Groups.OrderBy(g => g).ToList());
+            ActiveGroups: _activeGroups.Groups.OrderBy(g => g).ToList(),
+            GodotBinaryConfigured: probe.Configured,
+            GodotBinaryResolved: probe.Resolved,
+            GodotBinaryFound: probe.Found,
+            GodotBinaryError: probe.Error);
     }
 
     [McpServerTool, Description(
@@ -123,7 +131,21 @@ public sealed class RuntimeTools
                 Pid: current.Pid,
                 StartedAt: current.StartedAt,
                 Status: "already_running",
-                Error: "game_already_running");
+                Error: "game_already_running. Call runtime_stop_game first.");
+        }
+
+        // Pre-flight the Godot binary so an unset/wrong WICK_GODOT_BIN surfaces
+        // synchronously instead of producing a silent "Status: running" with zero
+        // captured exceptions (the original UX cliff: HasIssues=false would let an
+        // agent conclude the game was healthy when it never started).
+        var probe = _launcher.ProbeGodotBinary();
+        if (!probe.Found)
+        {
+            return new LaunchGameResult(
+                Pid: null,
+                StartedAt: null,
+                Status: "godot_binary_not_found",
+                Error: probe.Error);
         }
 
         var launched = _launcher.Launch(scene, headless, extraArgs ?? Array.Empty<string>());
@@ -242,7 +264,11 @@ public sealed record RuntimeStatusResult(
     bool EditorConnected,
     int ExceptionCount,
     int LogLineCount,
-    IReadOnlyList<string> ActiveGroups);
+    IReadOnlyList<string> ActiveGroups,
+    string GodotBinaryConfigured,
+    string? GodotBinaryResolved,
+    bool GodotBinaryFound,
+    string? GodotBinaryError);
 
 public sealed record LogTailResult(
     IReadOnlyList<string> Lines,
