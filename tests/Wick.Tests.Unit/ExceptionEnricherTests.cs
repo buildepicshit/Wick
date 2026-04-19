@@ -100,17 +100,18 @@ public sealed class ExceptionEnricherTests
         workspace.IsLoaded.Returns(false);
         var bridge = Substitute.For<IGodotBridgeManagerAccessor>();
         bridge.IsEditorConnected.Returns(true);
-        bridge.GetSceneContext().Returns(new SceneContext
+        bridge.GetSceneContextAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult<SceneContext?>(new SceneContext
         {
             ScenePath = "res://scenes/Level1.tscn",
             NodeCount = 42,
-        });
+        }));
         var enricher = new ExceptionEnricher(workspace, new LogBuffer(), bridge);
 
         var result = await enricher.EnrichAsync(MakeRaw());
 
         result.Scene.Should().NotBeNull();
         result.Scene!.ScenePath.Should().Be("res://scenes/Level1.tscn");
+        result.Scene.NodeCount.Should().Be(42);
     }
 
     [Fact]

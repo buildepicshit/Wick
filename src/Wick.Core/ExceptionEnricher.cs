@@ -25,7 +25,7 @@ public sealed class ExceptionEnricher
     {
         var source = await TryGetSourceContextAsync(raw).ConfigureAwait(false);
         var recentLogs = _logBuffer.GetRecent(20);
-        var scene = TryGetSceneContext();
+        var scene = await TryGetSceneContextAsync().ConfigureAwait(false);
 
         return new EnrichedException
         {
@@ -74,14 +74,14 @@ public sealed class ExceptionEnricher
         return context;
     }
 
-    private SceneContext? TryGetSceneContext()
+    private async Task<SceneContext?> TryGetSceneContextAsync()
     {
         if (_bridge is null || !_bridge.IsEditorConnected)
             return null;
 
         try
         {
-            return _bridge.GetSceneContext();
+            return await _bridge.GetSceneContextAsync().ConfigureAwait(false);
         }
         catch (InvalidOperationException)
         {

@@ -104,7 +104,7 @@ ExceptionEnricher
     │  ├── IRoslynWorkspaceService.GetSourceContext()
     │  ├── IRoslynWorkspaceService.GetCallers()
     │  ├── LogBuffer.GetRecent(20)
-    │  └── IGodotBridgeManagerAccessor.GetSceneContext()
+    │  └── IGodotBridgeManagerAccessor.GetSceneContextAsync()
     │
     ▼  deposits enriched exception
 ExceptionBuffer
