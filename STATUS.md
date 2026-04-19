@@ -1,15 +1,15 @@
 ---
 project: Wick
 phase: phase-2-dogfooding
-last_shipped: 2026-04-16
-last_updated: 2026-04-16T12:30-07:00
+last_shipped: 2026-04-19
+last_updated: 2026-04-19T00:00-07:00
 tests:
-  total: 220
-  passing: 220
+  total: 240
+  passing: 240
   failing: 0
 blockers: []
-next_milestone: Phase 2 dogfooding — Floom + UsefulIdiots integration validation
-version: 0.5.0
+next_milestone: GDScript-side bridge auth (editor 6505 + runtime 7777) — see SECURITY.md threat model
+version: 1.0.0
 dotnet: 10.0.201
 target_framework: net10.0
 license: MIT
@@ -17,13 +17,13 @@ license: MIT
 
 # Wick — Project Status
 
-> **Snapshot as of 2026-04-16.** This file answers *"where is Wick right now?"* — current phase, recent work, test and build state, blockers, next steps. Updated after every significant session. Forward-looking roadmap: [`docs/planning/2026-04-11-roadmap-to-public-launch.md`](docs/planning/2026-04-11-roadmap-to-public-launch.md). Engineering standards and architecture: [`AGENTS.md`](AGENTS.md). Project overview: [`README.md`](README.md).
+> **Snapshot as of 2026-04-19.** This file answers *"where is Wick right now?"* — current phase, recent work, test and build state, blockers, next steps. Updated after every significant session. Forward-looking roadmap: [`docs/planning/2026-04-11-roadmap-to-public-launch.md`](docs/planning/2026-04-11-roadmap-to-public-launch.md). Engineering standards and architecture: [`AGENTS.md`](AGENTS.md). Project overview: [`README.md`](README.md).
 
 ## What Wick is
 
 Wick is a native .NET 10 Model Context Protocol server that captures unhandled C# exceptions from a running Godot game, enriches each exception with Roslyn-powered source context (calling method body, surrounding lines, caller chain), and exposes the enriched exception stream to AI coding assistants over MCP. The value proposition is narrow and deliberate: **when a Godot C# game crashes, the agent sees the exception with full source-level context and can fix it in one turn instead of ten.**
 
-**Version:** `0.5.0` (sourced from `Directory.Build.props`; MCP server reads it at startup)
+**Version:** `1.0.0` (sourced from `Directory.Build.props`; MCP server reads it at startup)
 **.NET:** `10.0.201` SDK, targeting `net10.0`, C# 14
 **Target Godot:** `4.6.1-stable-mono`
 **License:** MIT
@@ -43,6 +43,7 @@ Phase 2 validates Wick against two dogfood targets — **Floom** and **UsefulIdi
 
 ## Last Shipped
 
+- **2026-04-19 — `v1.0.0` — Post-v0.5 engineering audit follow-ups complete; first NuGet release of `Wick.Runtime`.** External engineering & viability analysis (canonical report at `analysis/reports/Wick-analysis.md` in the parent workspace) closed 1 P0 + every P1 + most P2/P3 in a single squashed PR (#54). Honesty-of-surface drift in `docs/tools-reference.md` / `docs/getting-started.md` resolved; `GodotBridgeManager.GetSceneContext` wired to the editor bridge (the demo claim now works); `runtime_launch_game` preflights `WICK_GODOT_BIN`; verbose RPC trace defaults off; in-process Wick.Runtime bridge requires a 256-bit shared-secret token; cross-OS CI matrix (ubuntu/windows/macos) with NuGet caching + TRX upload; tag-driven NuGet release pipeline live; legacy `Wick.sln` removed; `SECURITY.md` carries an explicit threat model. 240/240 tests green, 0 warnings.
 - **2026-04-16 — `v0.5.0` — Phase 3 engineering-excellence + OSS audit complete.** 32/32 audit issues closed across 9 PRs (#43–#52). Honesty-of-surface fixes, security sprint, schema-honest MCP errors (`McpException` instead of fake error-node envelopes), collection immutability, `ILogger` injection, `BridgeResponse` discriminated union, string enums, tool-catalog drift guard. Full triage: [`docs/planning/2026-04-16-phase-3-audit-findings.md`](docs/planning/2026-04-16-phase-3-audit-findings.md).
 - **2026-04-16 — `chore: ship only /addons/ via Godot Asset Library` ([#7](https://github.com/buildepicshit/Wick/pull/7))** — Adopted Godot's official `.gitattributes` recommendation so Asset Library downloads deliver only `/addons/wick/` (~6.8KB zip) instead of the full MCP server tree. README install section rewritten to make the two-part install (Godot bridge + MCP server) explicit. Closes [#6](https://github.com/buildepicshit/Wick/issues/6).
 - **2026-04-13 — `feat: Wick v0.1.0 — Roslyn-enriched C# exception telemetry for Godot, over MCP`** — Initial public release. Complete MCP server with 5-pillar tool group model, exception pipeline, Roslyn enrichment, and in-process runtime companion.

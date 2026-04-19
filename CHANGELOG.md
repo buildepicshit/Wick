@@ -7,12 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Phase 2 dogfooding integration work; v1.0-prep items tracked in
-`docs/planning/2026-04-16-phase-3-audit-findings.md`.
+Phase 2 dogfooding integration work; GDScript-side editor + runtime
+bridge auth (deferred from v1.0 — see SECURITY.md threat model).
 
-Post-v0.5 external engineering audit follow-ups (canonical report at
-`/buildepicshit/analysis/reports/Wick-analysis.md`).
-On `chore/post-audit-quick-wins`:
+## [1.0.0] — 2026-04-19
+
+First stable release. Resolves the post-v0.5 external engineering
+audit (canonical report at `/buildepicshit/analysis/reports/Wick-analysis.md`):
+1 P0 + every P1 + most P2/P3 closed; 240/240 tests green on
+ubuntu/windows/macos; 0 warnings; first NuGet publication of
+`Wick.Runtime`.
 
 ### Added
 
