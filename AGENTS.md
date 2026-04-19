@@ -223,8 +223,8 @@ addons/wick/                   # GDScript-side plugin loaded by Godot
                                     # - mcp_runtime_bridge.gd (autoload runtime bridge)
 
 tests/
-├── Wick.Tests.Unit/           # 203 unit tests (in Wick.slnx)
-├── Wick.Tests.Integration/    # 12 integration tests
+├── Wick.Tests.Unit/           # unit tests (count tracked in STATUS.md)
+├── Wick.Tests.Integration/    # integration tests (count tracked in STATUS.md)
 ├── BridgeConsoleTest/         # Interactive bridge smoke test (not automated, in slnx)
 └── LspConsoleTest/            # Interactive LSP smoke test (not automated, NOT in slnx)
 
@@ -232,8 +232,7 @@ tests/
 Directory.Build.props               # Repo-wide project defaults
 Directory.Packages.props            # Central NuGet version management
 global.json                         # .NET 10.0.201 pin
-Wick.slnx                      # Modern solution file (canonical)
-Wick.sln                       # Legacy solution file (backup)
+Wick.slnx                      # Solution file (modern .slnx format only — Wick.sln removed in v0.6 cycle)
 ```
 
 ## Where to Look for Deeper Context

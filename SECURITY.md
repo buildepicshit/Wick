@@ -8,13 +8,45 @@ If you discover a security vulnerability in Wick, please report it responsibly.
 
 Instead, please use [GitHub's private vulnerability reporting](https://github.com/buildepicshit/Wick/security/advisories/new). We will acknowledge receipt within 48 hours and provide a timeline for a fix.
 
-## Scope
+## Threat Model
 
-Wick is a developer tool (MCP server) that runs locally on developer machines. It communicates via:
+Wick is a developer tool (MCP server) that runs locally on developer machines. Understanding what is in and out of scope determines whether a finding is something we will fix as a security vulnerability or something we will document as expected behavior.
+
+### In scope
+
+We accept reports for, and treat as security vulnerabilities, the following classes of issue:
+
+1. **Remote code execution via the MCP tool surface.** A crafted MCP tool argument (scene path, file path, build filter, NuGet identifier, dotnet CLI argument, etc.) that escapes its validator and executes attacker-controlled code on the developer's machine.
+2. **Sandbox escape from the headless Godot dispatcher.** A crafted `scene_*` request that causes `addons/wick/scene_ops.gd` to read or write outside the project's `res://` root, or to load a polymorphic resource that runs attacker-controlled GDScript.
+3. **Subprocess argument injection.** Any path through the codebase that builds a process command line by string concatenation rather than `ProcessStartInfo.ArgumentList`. (The codebase already routes every spawn through `ArgumentList`; regressions are in scope.)
+4. **Secret / PII leakage in MCP tool output.** Output that includes secrets from the developer's environment (env vars, NuGet feed credentials, GitHub tokens, browser-cookie material) or PII / source contents the developer did not explicitly request.
+5. **Supply-chain vulnerabilities in our pinned dependency graph.** Known CVEs in pinned NuGet packages, malicious typosquats slipping past `nuget.config`'s `<clear/>`, or unpinned GitHub Actions in our CI workflows.
+6. **Crash-by-peer.** Any code path where a peer (LSP/DAP server, Godot subprocess, in-process bridge client) can crash the Wick MCP server with a single message — including unbounded `Content-Length` allocations and similar denial-of-service shapes.
+
+### Out of scope
+
+The following are explicit non-goals for v1 and are expected behavior:
+
+1. **Other local processes running as the same UID.** Wick's localhost JSON-RPC bridges currently bind on `127.0.0.1:6505` (editor), `:7777` (runtime), and `:7878` (in-process Wick.Runtime). These bridges do not authenticate the caller; any process running under the developer's UID can connect and invoke `editor_call_method` / `editor_set_property` / `runtime_call_method` / `runtime_set_property` against the live editor or game. **This is by design for v1** — adding a startup-generated shared-secret handshake is on the v0.6 roadmap. Until that ships, treat the developer's UID as the trust boundary.
+2. **Network attackers.** All Wick TCP listeners bind to `IPAddress.Loopback`. We do not accept reports of "Wick exposes services" — they are loopback-only by construction.
+3. **Untrusted-game-project scenarios.** A developer who uses Wick to run a Godot project they do not trust is outside the threat model. The Godot editor has access to the file system already; Wick simply gives an MCP client tools to interact with that editor.
+4. **Compromised local toolchain.** A compromised `dotnet` SDK install, a compromised `csharp-ls` install (Wick spawns it from PATH), or a compromised Godot binary will result in arbitrary code execution. Resolving binaries by absolute path (via `WICK_GODOT_BIN` and an explicit `csharp-ls` install path) is recommended; fully-pinned PATH resolution is on the roadmap.
+5. **Verbose tracing data leakage.** When `WICK_RPC_TRACE=verbose` is explicitly set by the operator, every JSON-RPC frame (including `textDocument/didOpen` payloads with full file contents) is written to stderr. This is opt-in for protocol debugging; the leak shape is documented and the default is off.
+
+### What this means for vulnerability reporters
+
+If your finding falls under "in scope": please file via the GitHub private advisory link above. We will treat it as confidential, acknowledge within 48 hours, and ship a fix on a coordinated timeline.
+
+If your finding falls under "out of scope" but you believe the threat model itself is wrong: please open a discussion thread instead, so we can debate the scope publicly. Several of the current "out of scope" items (notably #1, localhost bridge auth) are on the roadmap to move into scope.
+
+## Loopback Communication
+
+Wick communicates via:
 
 - **stdio** — with the MCP client (e.g., IDE extensions)
-- **TCP JSON-RPC** — with the Godot editor plugin (localhost port 6505)
-- **TCP JSON-RPC** — with the Godot runtime addon (localhost port 7777)
+- **TCP JSON-RPC** — with the Godot editor plugin (loopback `127.0.0.1:6505`)
+- **TCP JSON-RPC** — with the Godot runtime addon (loopback `127.0.0.1:7777`)
+- **TCP JSON-RPC** — with the optional in-process Wick.Runtime companion (loopback `127.0.0.1:7878` by default)
 
 Wick does not expose any network services to external hosts by default.
 
