@@ -84,6 +84,28 @@ public abstract partial class HeaderDelimitedRpcClient : IDisposable
         return new StreamJsonRpc.HeaderDelimitedMessageHandler(writeStream, readStream, formatter);
     }
 
+    // Verbose StreamJsonRpc tracing is privacy-sensitive: every JSON-RPC frame —
+    // including textDocument/didOpen payloads with full file contents — is written
+    // to the listener, and Wick's stderr is what MCP clients route to user-visible
+    // log files. Default off; opt in only for protocol debugging by setting
+    // WICK_RPC_TRACE=verbose (or =all) in the environment before starting the server.
+    private static readonly System.Diagnostics.SourceLevels RpcTraceLevel = ResolveRpcTraceLevel();
+    private static readonly bool RpcTraceListenerEnabled = RpcTraceLevel != System.Diagnostics.SourceLevels.Off;
+
+    private static System.Diagnostics.SourceLevels ResolveRpcTraceLevel()
+    {
+        var raw = Environment.GetEnvironmentVariable("WICK_RPC_TRACE");
+        if (string.IsNullOrWhiteSpace(raw)) return System.Diagnostics.SourceLevels.Off;
+        return raw.Trim().ToLowerInvariant() switch
+        {
+            "off" or "0" or "false" => System.Diagnostics.SourceLevels.Off,
+            "warning" or "warn" => System.Diagnostics.SourceLevels.Warning,
+            "info" or "information" => System.Diagnostics.SourceLevels.Information,
+            "verbose" or "all" or "true" or "1" => System.Diagnostics.SourceLevels.Verbose,
+            _ => System.Diagnostics.SourceLevels.Warning,
+        };
+    }
+
     private bool StartRpcPump(Stream readStream, Stream writeStream)
     {
         try
@@ -96,10 +118,13 @@ public abstract partial class HeaderDelimitedRpcClient : IDisposable
                 }
             };
             var messageHandler = CreateMessageHandler(writeStream, readStream, formatter);
-            
+
             Rpc = new StreamJsonRpc.JsonRpc(messageHandler, RpcTarget);
-            Rpc.TraceSource.Switch.Level = System.Diagnostics.SourceLevels.Verbose;
-            Rpc.TraceSource.Listeners.Add(new System.Diagnostics.TextWriterTraceListener(Console.Error, "StdErr"));
+            Rpc.TraceSource.Switch.Level = RpcTraceLevel;
+            if (RpcTraceListenerEnabled)
+            {
+                Rpc.TraceSource.Listeners.Add(new System.Diagnostics.TextWriterTraceListener(Console.Error, "StdErr"));
+            }
             Rpc.Disconnected += OnDisconnected;
             Rpc.StartListening();
 
@@ -162,7 +187,10 @@ public abstract partial class HeaderDelimitedRpcClient : IDisposable
     {
         if (Rpc != null)
         {
-            Rpc.TraceSource.Listeners.Remove("StdErr");
+            if (RpcTraceListenerEnabled)
+            {
+                Rpc.TraceSource.Listeners.Remove("StdErr");
+            }
             Rpc.Disconnected -= OnDisconnected;
             Rpc.Dispose();
             Rpc = null;

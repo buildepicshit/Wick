@@ -93,6 +93,12 @@ public sealed class GodotDapClient : IDisposable
         }
     }
 
+    // Caps the per-message Content-Length to defend against an OOM-by-peer attack
+    // when a misbehaving DAP server (or a peer reachable via a redirected handshake)
+    // sends an unbounded Content-Length value. 16 MiB is well above any legitimate
+    // DAP message; legitimate variable / stack-trace payloads stay in the low-MB range.
+    private const int MaxContentLengthBytes = 16 * 1024 * 1024;
+
     private async Task ReceiveLoopAsync(CancellationToken ct)
     {
         var buffer = new byte[1];
@@ -127,6 +133,12 @@ public sealed class GodotDapClient : IDisposable
                         }
                         break;
                     }
+                }
+
+                if (contentLength < 0 || contentLength > MaxContentLengthBytes)
+                {
+                    Console.Error.WriteLine($"[DAP] Rejecting message with out-of-range Content-Length: {contentLength} (max {MaxContentLengthBytes})");
+                    return;
                 }
 
                 if (contentLength > 0)

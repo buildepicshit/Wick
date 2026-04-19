@@ -49,13 +49,21 @@ public enum WickBridgeErrorCode
     [JsonStringEnumMemberName("connection_refused")] ConnectionRefused,
     [JsonStringEnumMemberName("timeout")] Timeout,
     [JsonStringEnumMemberName("internal")] Internal,
+    /// <summary>
+    /// Wire-format error code that this client does not recognize. Surfaced separately
+    /// from <see cref="Internal"/> so a forward-compat protocol drift (e.g. a future
+    /// GDScript-side <c>permission_denied</c>) is visible in logs / triage rather than
+    /// silently mislabeled as a server-internal failure.
+    /// </summary>
+    [JsonStringEnumMemberName("unknown")] Unknown,
 }
 
 internal static class WickBridgeErrorCodeParsing
 {
     /// <summary>
     /// Parses a wire-format error code string into the enum. Unknown codes map to
-    /// <see cref="WickBridgeErrorCode.Internal"/> so the pipeline always yields a value.
+    /// <see cref="WickBridgeErrorCode.Unknown"/> so a forward-compat wire-protocol
+    /// drift is distinguishable from a genuine server-internal error.
     /// </summary>
     public static WickBridgeErrorCode Parse(string? wireValue) => wireValue switch
     {
@@ -67,7 +75,8 @@ internal static class WickBridgeErrorCodeParsing
         "invalid_params" => WickBridgeErrorCode.InvalidParams,
         "connection_refused" => WickBridgeErrorCode.ConnectionRefused,
         "timeout" => WickBridgeErrorCode.Timeout,
-        _ => WickBridgeErrorCode.Internal,
+        "internal" => WickBridgeErrorCode.Internal,
+        _ => WickBridgeErrorCode.Unknown,
     };
 }
 

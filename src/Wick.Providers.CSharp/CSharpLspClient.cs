@@ -156,6 +156,13 @@ public sealed class CSharpLspClient : IDisposable
         await stream.FlushAsync(ct);
     }
 
+    // Caps the per-message Content-Length to defend against an OOM-by-peer attack
+    // when a misbehaving or compromised csharp-ls (or a peer reachable via a
+    // redirected handshake — see ProcessExceptionSource handshake path) sends an
+    // unbounded Content-Length value. 16 MiB is well above any legitimate LSP
+    // message; legitimate textDocument/didOpen payloads stay in the low-MB range.
+    private const int MaxContentLengthBytes = 16 * 1024 * 1024;
+
     private async Task ReceiveLoopAsync(CancellationToken ct)
     {
         if (_process == null) return;
@@ -191,6 +198,12 @@ public sealed class CSharpLspClient : IDisposable
                         }
                         break;
                     }
+                }
+
+                if (contentLength < 0 || contentLength > MaxContentLengthBytes)
+                {
+                    Console.Error.WriteLine($"[CSharpLsp] Rejecting message with out-of-range Content-Length: {contentLength} (max {MaxContentLengthBytes})");
+                    return;
                 }
 
                 if (contentLength > 0)
