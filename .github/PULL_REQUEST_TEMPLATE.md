@@ -19,3 +19,19 @@
 - [ ] Unit tests added/updated
 - [ ] `dotnet build` succeeds with zero warnings
 - [ ] `dotnet test` passes
+
+## Verification
+
+<!--
+Per AGENTS.md: PR descriptions must include real, fresh verification output —
+never "should pass." Paste the actual tail of:
+
+  dotnet build Wick.slnx --configuration Release && dotnet test Wick.slnx --configuration Release
+
+Below. If the change touches docs/config only, paste the smallest verification
+appropriate (e.g., `dotnet build` summary line).
+-->
+
+```
+<paste fresh output of the canonical verification command here>
+```

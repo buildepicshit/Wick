@@ -10,7 +10,7 @@ Wick is a native-C# [Model Context Protocol](https://modelcontextprotocol.io/) (
 
 **Architectural shape you must understand:** Wick is an **external process** — it does NOT run inside Godot. Godot talks to it over stdio (MCP protocol to the AI client) and TCP JSON-RPC (bridge between Godot's GDScript plugin at `addons/wick/` and the Wick server at ports 6505 editor / 7777 runtime). This architecture is load-bearing for two reasons: (1) it lets Wick target `net10.0` even though Godot 4.6.1's runtime is stuck on `net8.0`, and (2) it keeps the Godot editor responsive while the server does heavy analysis work.
 
-**Current phase:** Phase 2 — Real-World Validation (Dogfooding). Phase 1 feature completeness achieved 2026-04-12. See [`STATUS.md`](STATUS.md) for the up-to-date phase, recently shipped PRs, test and build state, and blockers.
+**Current phase:** Phase 2 — Public Testing (real Godot C# projects, not synthetic dogfood targets). Phase 1 feature completeness achieved 2026-04-12. First public-test pass landed 2026-04-15 → 2026-04-17 against the BES Studios splash project; writeup at [`docs/public-testing/2026-04-15-bes-splash-3d-pass.md`](docs/public-testing/2026-04-15-bes-splash-3d-pass.md). See [`STATUS.md`](STATUS.md) for the up-to-date phase, recently shipped PRs, test and build state, and blockers.
 
 ## Build & Test
 
@@ -30,7 +30,7 @@ dotnet build Wick.slnx --configuration Release && dotnet test Wick.slnx --config
 - **.NET 10 / C# 14 single-target `net10.0`.** `global.json` pins `10.0.201` with `rollForward: latestFeature` and `allowPrerelease: true`. Wick has no Godot runtime constraint because nothing it ships gets loaded into a Godot process — the Godot plugin is pure GDScript, the bridge is JSON-RPC over TCP. Do not multi-target. Do not downshift to `net8.0`.
 - **0 warnings, 0 failures.** `TreatWarningsAsErrors=true` is enforced repo-wide via `Directory.Build.props`. Any warning fails the build. This is not aspirational. Do not use `#pragma warning disable` or blanket `<NoWarn>` — fix the underlying issue. Narrow `<NoWarn>` for a specific diagnostic ID is acceptable only with a comment explaining why.
 - **xUnit v3 (3.2.2) with `Microsoft.NET.Test.Sdk` 18.4.0.** Unit tests live in `tests/Wick.Tests.Unit/`. Test classes follow a `ClassUnderTest_Method_ExpectedBehavior` naming convention. Use **FluentAssertions** for readable assertions (`result.Should().Be(expected)`) and **NSubstitute** for mocks. Tests must be deterministic — no network calls, no real file system side effects, no time-dependent behavior.
-- **Current test count:** 208 unit tests (`Wick.Tests.Unit`) + 12 integration tests (`Wick.Tests.Integration`), 220 total, all passing. See [`STATUS.md`](STATUS.md) for up-to-date counts.
+- **Current test count:** see [`STATUS.md`](STATUS.md) frontmatter (`tests.total` / `tests.passing` / `tests.failing`) for live counts. Hard-coding numbers here causes drift across releases — STATUS.md is the single source of truth.
 
 ### Central package management
 

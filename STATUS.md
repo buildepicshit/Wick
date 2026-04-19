@@ -1,11 +1,11 @@
 ---
 project: Wick
-phase: phase-2-dogfooding
+phase: phase-2-public-testing
 last_shipped: 2026-04-19
 last_updated: 2026-04-19T00:00-07:00
 tests:
-  total: 240
-  passing: 240
+  total: 245
+  passing: 245
   failing: 0
 blockers: []
 next_milestone: GDScript-side bridge auth (editor 6505 + runtime 7777) — see SECURITY.md threat model
@@ -28,7 +28,7 @@ Wick is a native .NET 10 Model Context Protocol server that captures unhandled C
 **Target Godot:** `4.6.1-stable-mono`
 **License:** MIT
 
-## Current Phase: Phase 2 — Dogfooding
+## Current Phase: Phase 2 — Public Testing
 
 Phase 1 (feature completeness) shipped. All v1 sub-specs are wired and green:
 
@@ -39,7 +39,9 @@ Phase 1 (feature completeness) shipped. All v1 sub-specs are wired and green:
 - **Sub-spec E** — build intelligence with Roslyn enrichment (`BuildTools` wired through the enrichment pipeline)
 - **Sub-spec F** — `Wick.Runtime` NuGet in-process companion (`TaskScheduler.UnobservedTaskException` + live state queries)
 
-Phase 2 validates Wick against two dogfood targets — **Floom** and **UsefulIdiots** — to surface integration gaps, DX friction, and exception paths not yet covered. Phase 3 (engineering-excellence audit) was pulled forward and largely landed in v0.5.0 — see the `Last Shipped` entry and the [audit findings doc](docs/planning/2026-04-16-phase-3-audit-findings.md). Remaining Phase 3 items: v1.0-prep work (full wire-shape discriminated unions for the 4 MCP-facing result types + a `SymbolKind` enum pass), tracked in the audit doc.
+Phase 2 validates Wick against external Godot C# projects — **public testing**, not synthetic dogfooding. The framing changed because the original "dogfooding" plan named Floom (an F# CLI, not a Godot project) and UsefulIdiots (currently doc-only after a canonical re-init) as targets — neither is a valid Wick target. Public testing routes Wick at any real Godot C# codebase and reports honestly on what was used, what worked, what was painful. First pass: [`docs/public-testing/2026-04-15-bes-splash-3d-pass.md`](docs/public-testing/2026-04-15-bes-splash-3d-pass.md) — the BES Studios animated splash logo (a real internal product asset, not a contrived demo) was built using Wick's `runtime` and `build` pillars over a ~60h Claude Code session, 13 verified `mcp__wick__*` tool calls, with concrete findings about which marquee features (`runtime_diagnose`, `runtime_query_scene_tree`, the in-process companion NuGet) didn't get reached for in real use.
+
+Phase 3 (engineering-excellence audit) was pulled forward and largely landed in v0.5.0 — see the `Last Shipped` entry and the [audit findings doc](docs/planning/2026-04-16-phase-3-audit-findings.md). Remaining Phase 3 items: v1.0-prep work (full wire-shape discriminated unions for the 4 MCP-facing result types + a `SymbolKind` enum pass), tracked in the audit doc.
 
 ## Last Shipped
 
@@ -50,17 +52,11 @@ Phase 2 validates Wick against two dogfood targets — **Floom** and **UsefulIdi
 
 ## Test & Build State
 
-| Metric | Value |
-|---|---|
-| Unit tests | 208 (`Wick.Tests.Unit`) |
-| Integration tests | 12 (`Wick.Tests.Integration`) |
-| **Total** | **220** |
-| Passing | 220 (100%) |
-| Failing | 0 |
-| Skipped | 0 |
-| Build warnings | 0 (`TreatWarningsAsErrors=true` repo-wide) |
-| Build errors | 0 |
-| Framework | `net10.0` |
+Live counts are in this file's YAML frontmatter (`tests.total` / `tests.passing` / `tests.failing`) — the single source of truth that machine consumers (`yq '.tests.total' STATUS.md`) and humans both read. Build state is enforced repo-wide:
+
+- Build warnings: `0` (`TreatWarningsAsErrors=true` via `Directory.Build.props`)
+- Build errors: `0`
+- Framework: `net10.0`
 
 Canonical verification: `dotnet build Wick.slnx --configuration Release && dotnet test Wick.slnx --configuration Release`.
 
@@ -70,12 +66,12 @@ Tree clean on `main`. Open PRs and dependabot activity tracked at https://github
 
 ## Next Up
 
-Phase 2 dogfooding. Per the [roadmap](docs/planning/2026-04-11-roadmap-to-public-launch.md):
+Phase 2 public testing. Per the [revised plan](docs/planning/2026-04-11-roadmap-to-public-launch.md) (Floom and UsefulIdiots dropped as targets — see the planning doc and the Phase 2 section above for why):
 
-1. **Floom integration validation** — run Wick against the Floom codebase, surface exception paths and DX friction
-2. **UsefulIdiots integration validation** — parallel dogfood target
-3. **Phase 3 prep** — engineering excellence audit once dogfood gaps are closed
-4. **`dotnet tool` packaging** — pair the Asset Library distribution of the Godot bridge with a `dotnet tool install -g wick` path for the MCP server
+1. **Next public-test target** — a multi-file Godot C# project that installs `Wick.Runtime` from NuGet and exercises the un-touched surface (`csharp` pillar, `runtime_query_scene_tree`, in-process Tier 2 bridge). Concrete candidate proposed in [`docs/public-testing/2026-04-15-bes-splash-3d-pass.md`](docs/public-testing/2026-04-15-bes-splash-3d-pass.md) under "Next public-test target — proposed."
+2. **Discoverability fixes from the first pass** — `runtime_diagnose` description should explicitly route agents away from composing `runtime_status` + `runtime_get_exceptions` + `runtime_get_log_tail`; in-process bridge should be nudged when `runtime_status` sees a connected game without a `WICK_BRIDGE_TOKEN`. Both raised as P1/P2 findings in the bes-splash-3d pass.
+3. **`dotnet tool` packaging** — pair the Asset Library distribution of the Godot bridge with a `dotnet tool install -g wick` path for the MCP server.
+4. **GDScript-side bridge auth** — currently the editor (`:6505`) and runtime (`:7777`) bridges trust the developer's UID; matching the in-process bridge's shared-secret model is tracked in [`SECURITY.md`](SECURITY.md) under "Out of scope #1" and on the v1.x hardening roadmap.
 
 ## Validated Findings (Phase A reference material)
 
@@ -103,4 +99,4 @@ None.
 
 ---
 
-*Last updated: 2026-04-16 — rewrite after reconciling the public repo with three days of dev work that had inadvertently been landing on the pre-launch private repo via a stale remote. AGENTS.md / CHANGELOG.md / CONTRIBUTING.md / planning docs / dependency bump / BES mark synced. STATUS.md and README.md rewritten fresh for public reality (dropped references to the pre-launch private repo state and Phase 4 flip plan, which is now complete). Local paths scrubbed from AGENTS.md and the roadmap doc.*
+*Last updated: see frontmatter `last_updated` field. The frontmatter is the source of truth for dates, version, and test counts in this file — body prose should reference it rather than re-state it, to prevent drift across releases.*

@@ -38,27 +38,31 @@ Wick has two parts: a Godot-side bridge addon (`/addons/wick/`) and the .NET MCP
 
 **MCP server** — clone and build:
 
-    git clone https://github.com/buildepicshit/Wick.git
-    cd Wick
-    dotnet build Wick.slnx --configuration Release
+```bash
+git clone https://github.com/buildepicshit/Wick.git
+cd Wick
+dotnet build Wick.slnx --configuration Release
+```
 
 ### MCP Configuration
 
 Add Wick to your AI coding assistant's MCP configuration:
 
-    {
-      "mcpServers": {
-        "wick": {
-          "command": "dotnet",
-          "args": ["run", "--project", "path/to/Wick/src/Wick.Server"],
-          "env": {
-            "WICK_GROUPS": "core,runtime,csharp,build",
-            "WICK_GODOT_BIN": "/path/to/godot",
-            "WICK_PROJECT_PATH": "/path/to/your/godot-project"
-          }
-        }
+```json
+{
+  "mcpServers": {
+    "wick": {
+      "command": "dotnet",
+      "args": ["run", "--project", "path/to/Wick/src/Wick.Server"],
+      "env": {
+        "WICK_GROUPS": "core,runtime,csharp,build",
+        "WICK_GODOT_BIN": "/path/to/godot",
+        "WICK_PROJECT_PATH": "/path/to/your/godot-project"
       }
     }
+  }
+}
+```
 
 ### Tool Groups
 
@@ -76,12 +80,26 @@ Example: WICK_GROUPS=core,runtime,csharp,build or --groups=all.
 
 ### Optional: Wick.Runtime Companion
 
-For in-process exception capture (async exceptions, TaskScheduler failures), add the Wick.Runtime NuGet to your Godot project:
+For in-process exception capture (async exceptions, `TaskScheduler.UnobservedTaskException`) and live scene-tree queries, add the [`Wick.Runtime`](https://www.nuget.org/packages/Wick.Runtime) NuGet companion to your Godot C# project:
 
-    // In your Godot project's autoload or entry point:
-    WickRuntime.Install();
+```bash
+dotnet add package Wick.Runtime
+```
 
-This captures exceptions that stderr can't see and reports them to the Wick server via a TCP bridge.
+Wire both `Install()` and `Tick()` into your game's entry point — both are required:
+
+```csharp
+using Wick.Runtime;
+
+public partial class Main : Node
+{
+    public override void _Ready() => WickRuntime.Install();
+
+    public override void _Process(double delta) => WickRuntime.Tick();
+}
+```
+
+> **If your in-process bridge tools (`runtime_query_scene_tree`, etc.) hang forever, you forgot `Tick()`.** `Install()` alone covers exception capture, but live RPC handlers need `Tick()` to drain the main-thread dispatcher. See [`docs/getting-started.md`](docs/getting-started.md#3-optional-install-wickruntime-companion) and the [package README](src/Wick.Runtime/README.md) for the full story.
 
 ## Architecture
 

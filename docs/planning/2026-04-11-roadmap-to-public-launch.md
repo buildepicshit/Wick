@@ -2,13 +2,13 @@
 
 **Document type:** Planning — tracks the phased path from current state to the `Wick-public` OSS launch.
 **Last updated:** 2026-04-11
-**Status:** Phases 1–4 complete. Phase 2 (dogfooding) in progress per [`STATUS.md`](../../STATUS.md).
+**Status:** Phases 1–4 complete. Phase 2 reframed from "dogfooding" to **public testing** (first pass landed 2026-04-15; see [`docs/public-testing/`](../public-testing/)) per [`STATUS.md`](../../STATUS.md).
 
 ## Purpose
 
 This document is the single source of truth for *where Wick is going next and in what order*. It was written on 2026-04-11 after a strategic audit that narrowed Wick's scope.
 
-Wick's value proposition is **Roslyn-enriched C# runtime exception telemetry for Godot, exposed over MCP**. Scene manipulation parity with other Godot MCP servers is explicitly not a goal — the competitive landscape audit confirmed we cannot win that axis and neither of our internal dogfood targets needs it. The moat is the exception pipeline + Roslyn enrichment, and the second half of that moat is the `Wick.Runtime` in-process companion NuGet (Sub-spec F), which was promoted ahead of the deferred scene work.
+Wick's value proposition is **Roslyn-enriched C# runtime exception telemetry for Godot, exposed over MCP**. Scene manipulation parity with other Godot MCP servers is explicitly not a goal — the competitive landscape audit confirmed we cannot win that axis. The moat is the exception pipeline + Roslyn enrichment, and the second half of that moat is the `Wick.Runtime` in-process companion NuGet (Sub-spec F), which was promoted ahead of the deferred scene work.
 
 `STATUS.md` points at this document for the detailed roadmap and carries only the current-phase snapshot.
 
@@ -28,16 +28,19 @@ Wick's value proposition is **Roslyn-enriched C# runtime exception telemetry for
 
 **Phase 1 exit criteria:** all steps complete, `dotnet build` clean, `dotnet test` green, STATUS.md updated, no known `TODO` markers in code added this phase.
 
-### Phase 2 — Real-world validation (dogfooding)
+### Phase 2 — Real-world validation (public testing)
 
-**Goal:** Wick is wired into Floom and Useful Idiots development workflows, has absorbed a week of real agent-driven debugging, and has had its rough edges fixed under real pressure. No synthesized tests — this is "does the tool actually help a developer fix bugs" validation.
+**Goal:** Wick is exercised against real Godot C# projects in actual agent sessions (not synthetic test rigs), with each pass producing a written record of which tools were reached for, which weren't, what worked, and what was painful. Honest reporting over performative coverage.
 
-| Step | Scope |
-|---|---|
-| 2a | Floom dogfooding — wire Wick into Floom's Claude Code configuration, run it against Floom's actual simulation errors and build failures for ~1 week. Fix whatever rough edges surface. |
-| 2b | Useful Idiots dogfooding — same integration pass for UI. Async exception pressure will stress Sub-spec F (`Wick.Runtime`) hardest here; this is the real test of that library. |
+**Why "public testing" not "dogfooding":** the original 2026-04-11 plan named Floom and Useful Idiots as dogfood targets, but Floom is an F# CLI (not a Godot project) and the canonical UsefulIdiots is currently doc-only after a fresh re-init — neither is a valid Wick target. The actual first pass exercised a real internal product asset (the BES Studios splash logo, a Godot 4.6 + .NET 8 + C# project) and that's what's being formalized as the Phase 2 model: any real Godot C# codebase qualifies, and each pass writes its own report under [`docs/public-testing/`](../public-testing/).
 
-**Phase 2 exit criteria:** Both flagship teams have used Wick end-to-end on real bugs, logged any issues, and the issues are either fixed or explicitly deferred with rationale. No known blockers for public release.
+| Step | Scope | Status |
+|---|---|---|
+| 2a | First public-test pass — `Assets/bes-splash-3d` (BES Studios animated splash logo). 2026-04-15 → 2026-04-17 Claude Code session, 13 verified Wick MCP calls across `runtime` + `build` pillars. | ✅ Complete — see [`docs/public-testing/2026-04-15-bes-splash-3d-pass.md`](../public-testing/2026-04-15-bes-splash-3d-pass.md) |
+| 2b | Second public-test pass — a multi-file Godot C# project that installs `Wick.Runtime` from NuGet, exercising the un-touched surface (`csharp` pillar, `runtime_query_scene_tree`, in-process Tier 2 bridge) and ideally a known recurring exception worth diagnosing. Candidate: official [Dodge the Creeps C# tutorial](https://github.com/godotengine/godot-demo-projects/tree/master/mono/dodge_the_creeps) cloned under `wick-public-test-targets/` (already pulled). | ⏳ Pending |
+| 2c | Discoverability fixes from 2a — `runtime_diagnose` description rewrite (P1), in-process bridge nudge in `runtime_status` (P2), `runtime_query_scene_tree` cross-link from `runtime_get_log_tail` (P2). | ⏳ Pending |
+
+**Phase 2 exit criteria:** At least 2 public-test passes against distinct Godot C# projects, each with a written report under `docs/public-testing/` citing the actual session evidence (tool calls, project source, project README attestation). The discoverability findings from each pass are either shipped or explicitly deferred with rationale. No known blockers for public release.
 
 ### Phase 3 — Engineering excellence + OSS hardening
 

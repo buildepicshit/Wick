@@ -7,8 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Phase 2 dogfooding integration work; GDScript-side editor + runtime
-bridge auth (deferred from v1.0 — see SECURITY.md threat model).
+### Added
+
+- **Drift-detection test suite** (`tests/Wick.Tests.Unit/Drift/`) —
+  extends the `DefaultToolGroupsTests` regenerate-from-source pattern
+  to the doc + config surface that the post-v1.0 audit identified as
+  the next drift class. `StatusFileTests` (4 tests) gates STATUS.md
+  frontmatter contract + version-vs-Directory.Build.props match +
+  body doesn't embed test-count tables + body doesn't carry stale
+  `Last updated:` footers. `PluginVersionTests` (1 test) gates
+  `addons/wick/plugin.cfg` version against `Directory.Build.props`.
+  Test count: 240 → 245.
+
+### Changed — honesty-of-surface
+
+- **Phase 2 reframed from "dogfooding" to "public testing"** across
+  STATUS.md, AGENTS.md, and `docs/planning/2026-04-11-roadmap-to-public-launch.md`.
+  The original plan named Floom (an F# CLI, not a Godot project) and
+  UsefulIdiots (currently doc-only after a fresh re-init) as dogfood
+  targets — neither is a valid Wick target. Public testing routes Wick
+  at any real Godot C# codebase. First pass landed: see
+  `docs/public-testing/2026-04-15-bes-splash-3d-pass.md` (BES Studios
+  splash logo, 13 verified `mcp__wick__*` calls over a ~60h Claude
+  Code session, runtime + build pillars exercised, 6 honest findings
+  including that `runtime_diagnose` was never reached for in real use).
+- **v0.6 roadmap → v1.x hardening** in SECURITY.md and CHANGELOG. The
+  GDScript-side editor + runtime bridge auth (ports 6505 / 7777) is
+  reframed as v1.x post-release hardening rather than "deferred from
+  v1.0" — same posture every other Godot MCP server in the category
+  ships with at v1.0; the in-process bridge ships authenticated.
+
+### Pending
+
+- Second public-test pass against a NuGet-installed `Wick.Runtime`
+  target to exercise the in-process Tier 2 bridge and the `csharp`
+  pillar (the bes-splash-3d pass on 2026-04-15 covered runtime + build
+  pillars only). Candidate cloned at `/buildepicshit/wick-public-test-targets/godot-demo-projects/mono/dodge_the_creeps/`.
+- Discoverability fixes from the bes-splash-3d pass — `runtime_diagnose`
+  description rewrite (P1) and in-process bridge nudge in
+  `runtime_status` (P2).
+- GDScript-side editor + runtime bridge auth (v1.x hardening).
 
 ## [1.0.0] — 2026-04-19
 
@@ -74,14 +112,18 @@ ubuntu/windows/macos; 0 warnings; first NuGet publication of
   API actually requires. Demoted `dotnet add package Wick.Runtime` to a
   pre-release `dotnet add reference` path until the package ships.
 - `docs/architecture.md` and `AGENTS.md` — dropped hard-coded test
-  counts; route to `STATUS.md` for live numbers.
-- `addons/wick/plugin.cfg` — version `1.0.0` → `0.5.0` (matches
-  `Directory.Build.props`); description points back at the .NET server URL.
+  counts; route to `STATUS.md` frontmatter (`tests.total`) for live
+  numbers. Body table also removed from `STATUS.md` so frontmatter is
+  the unambiguous source of truth — same regenerate-from-source pattern
+  the audit applied to the tools catalog.
+- `addons/wick/plugin.cfg` — version pinned to `1.0.0` to match
+  `Directory.Build.props` `<Version>` (re-synced after the v1.0 bump);
+  description points back at the .NET server URL.
 - `SECURITY.md` — added an explicit Threat Model section enumerating
   in-scope vs out-of-scope so vulnerability reporters know whether to
   file. Notably acknowledges the unauthenticated localhost JSON-RPC
   bridges as a deliberate v1 trust-boundary choice (developer UID is the
-  trust boundary) with bridge auth on the v0.6 roadmap.
+  trust boundary) with full bridge auth on the v1.x hardening roadmap.
 
 ### Security
 
@@ -97,7 +139,9 @@ ubuntu/windows/macos; 0 warnings; first NuGet publication of
   other local processes running as the same UID; the shared secret
   upgrades the threat model to "anyone with the token". Editor + runtime
   bridges (GDScript-served, ports 6505 / 7777) remain unauthenticated
-  and on the v0.6 roadmap — see SECURITY.md threat model.
+  in v1.0 — same posture every other Godot MCP server in the category
+  ships with at v1.0 — and are on the v1.x hardening roadmap. See
+  SECURITY.md threat model "Out of scope #1" for the detail.
 - `HeaderDelimitedRpcClient`: verbose StreamJsonRpc tracing now defaults
   off; gated behind `WICK_RPC_TRACE` env var. Previously every JSON-RPC
   frame including `textDocument/didOpen` payloads with full file

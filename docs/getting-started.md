@@ -52,16 +52,20 @@ The plugin starts two TCP JSON-RPC servers:
 
 ### 3. (Optional) Install Wick.Runtime Companion
 
-For in-process async exception capture, wire `Wick.Runtime` into your Godot C# project.
+For in-process async exception capture and live scene-tree queries, add the [`Wick.Runtime`](https://www.nuget.org/packages/Wick.Runtime) NuGet package to your Godot C# project:
 
-> **Pre-release note:** `Wick.Runtime` is not yet published to NuGet (planned for v0.6 — see [`STATUS.md`](../STATUS.md)). Until then, add a project reference to the cloned source:
+```bash
+cd your-godot-project
+dotnet add package Wick.Runtime
+```
+
+> **Working against unreleased changes?** If you're tracking `main` for unreleased fixes, swap the NuGet line for a project reference to the cloned source:
 >
 > ```bash
-> cd your-godot-project
 > dotnet add reference /path/to/Wick/src/Wick.Runtime/Wick.Runtime.csproj
 > ```
 >
-> Once published, the install will become `dotnet add package Wick.Runtime`.
+> The published package mirrors `main`, so this is only useful when you need a fix that hasn't been packaged yet.
 
 Then wire it into your game's entry point. Both `Install()` (once, in `_Ready`) and `Tick()` (every frame, in `_Process`) are required — without `Tick()`, live-bridge RPC handlers will not run because nothing drains the main-thread dispatcher:
 
@@ -99,6 +103,8 @@ Add to your `claude_desktop_config.json`:
   }
 }
 ```
+
+> **Cross-platform `WICK_GODOT_BIN` examples:** see [`.env.example`](../.env.example) for canonical Linux / macOS / Windows binary paths. Substitute the path that matches your OS into the snippet above.
 
 ### Cursor
 
