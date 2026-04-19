@@ -52,28 +52,31 @@ The plugin starts two TCP JSON-RPC servers:
 
 ### 3. (Optional) Install Wick.Runtime Companion
 
-For in-process async exception capture, add the `Wick.Runtime` NuGet package to your Godot C# project:
+For in-process async exception capture, wire `Wick.Runtime` into your Godot C# project.
 
-```bash
-cd your-godot-project
-dotnet add package Wick.Runtime
-```
+> **Pre-release note:** `Wick.Runtime` is not yet published to NuGet (planned for v0.6 — see [`STATUS.md`](../STATUS.md)). Until then, add a project reference to the cloned source:
+>
+> ```bash
+> cd your-godot-project
+> dotnet add reference /path/to/Wick/src/Wick.Runtime/Wick.Runtime.csproj
+> ```
+>
+> Once published, the install will become `dotnet add package Wick.Runtime`.
 
-Then initialize it in your game's entry point:
+Then wire it into your game's entry point. Both `Install()` (once, in `_Ready`) and `Tick()` (every frame, in `_Process`) are required — without `Tick()`, live-bridge RPC handlers will not run because nothing drains the main-thread dispatcher:
 
 ```csharp
 using Wick.Runtime;
 
 public partial class Main : Node
 {
-    public override void _Ready()
-    {
-        WickRuntime.Initialize();
-    }
+    public override void _Ready() => WickRuntime.Install();
+
+    public override void _Process(double delta) => WickRuntime.Tick();
 }
 ```
 
-This hooks `TaskScheduler.UnobservedTaskException` and provides structured logging that Wick captures automatically.
+`Install()` hooks `AppDomain.UnhandledException` + `TaskScheduler.UnobservedTaskException`, starts the in-process bridge listener, and registers structured logging that Wick captures automatically. See [`exception-pipeline.md`](exception-pipeline.md) for the full enrichment flow.
 
 ## Configuring Your AI Client
 

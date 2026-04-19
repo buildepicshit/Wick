@@ -102,8 +102,8 @@ src/
 └── Wick.Runtime/        # In-process NuGet companion (targets net8.0 for Godot)
 
 tests/
-├── Wick.Tests.Unit/         # 203 unit tests
-└── Wick.Tests.Integration/  # 12 integration tests (real MCP server)
+├── Wick.Tests.Unit/         # unit tests (count tracked in STATUS.md)
+└── Wick.Tests.Integration/  # integration tests (real MCP server, count tracked in STATUS.md)
 
 addons/wick/    # GDScript editor plugin
 ```
