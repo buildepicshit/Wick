@@ -66,7 +66,7 @@ public static class WickRuntime
                 typeof(ReflectionSceneBridge), nonPublic: true)!;
             var dispatcher = MainThreadDispatcher.Instance;
             var handlers = new WickBridgeHandlers(bridge, dispatcher);
-            s_bridgeServer = new WickBridgeServer(handlers);
+            s_bridgeServer = new WickBridgeServer(handlers, opts.BridgeAuthToken);
             try
             {
                 s_bridgeServer.Start(opts.BridgePort);
@@ -187,17 +187,35 @@ public sealed record WickRuntimeOptions
     public ISceneBridge? SceneBridge { get; init; }
 
     /// <summary>
-    /// Populates defaults from the process environment (<c>WICK_RUNTIME_PORT</c>) but leaves
-    /// all feature toggles at their code defaults.
+    /// Optional shared-secret that the bridge server requires on every request.
+    /// When non-null the server demands a matching <c>"auth"</c> field on each
+    /// JSON-RPC envelope. The Wick MCP server generates this value at startup
+    /// and propagates it via the <c>WICK_BRIDGE_TOKEN</c> environment variable
+    /// inherited at process spawn time. Leave null to disable auth (the v0.5
+    /// behavior — only safe when the developer's UID is the trust boundary).
+    /// </summary>
+    public string? BridgeAuthToken { get; init; }
+
+    /// <summary>
+    /// Populates defaults from the process environment (<c>WICK_RUNTIME_PORT</c>,
+    /// <c>WICK_BRIDGE_TOKEN</c>) but leaves all feature toggles at their code
+    /// defaults.
     /// </summary>
     public static WickRuntimeOptions FromEnvironment()
     {
+        var port = 7878;
         var portEnv = Environment.GetEnvironmentVariable("WICK_RUNTIME_PORT");
         if (!string.IsNullOrEmpty(portEnv) && int.TryParse(portEnv, out var parsed))
         {
-            return new WickRuntimeOptions { BridgePort = parsed };
+            port = parsed;
         }
-        return new WickRuntimeOptions();
+
+        var token = Environment.GetEnvironmentVariable("WICK_BRIDGE_TOKEN");
+        return new WickRuntimeOptions
+        {
+            BridgePort = port,
+            BridgeAuthToken = string.IsNullOrEmpty(token) ? null : token,
+        };
     }
 
     internal WickRuntimeOptions ResolvedWithDefaults() => this;

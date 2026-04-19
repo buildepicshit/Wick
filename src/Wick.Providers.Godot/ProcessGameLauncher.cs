@@ -18,6 +18,7 @@ public sealed partial class ProcessGameLauncher : IGameLauncher
     private readonly ExceptionEnricher _enricher;
     private readonly ILogger<ProcessGameLauncher> _logger;
     private readonly InProcessBridgeClientFactory? _bridgeFactory;
+    private readonly string? _bridgeAuthToken;
 
     public ProcessGameLauncher(
         string godotBinaryPath,
@@ -26,7 +27,8 @@ public sealed partial class ProcessGameLauncher : IGameLauncher
         LogBuffer logBuffer,
         ExceptionEnricher enricher,
         ILogger<ProcessGameLauncher> logger,
-        InProcessBridgeClientFactory? bridgeFactory = null)
+        InProcessBridgeClientFactory? bridgeFactory = null,
+        string? bridgeAuthToken = null)
     {
         _godotBinaryPath = godotBinaryPath;
         _projectPath = projectPath;
@@ -35,6 +37,7 @@ public sealed partial class ProcessGameLauncher : IGameLauncher
         _enricher = enricher;
         _logger = logger;
         _bridgeFactory = bridgeFactory;
+        _bridgeAuthToken = string.IsNullOrEmpty(bridgeAuthToken) ? null : bridgeAuthToken;
     }
 
     [LoggerMessage(EventId = 100, Level = LogLevel.Warning,
@@ -129,6 +132,14 @@ public sealed partial class ProcessGameLauncher : IGameLauncher
             UseShellExecute = false,
             CreateNoWindow = true,
         };
+        // Propagate the bridge auth token to the spawned Godot process so its
+        // optional Wick.Runtime companion can configure WickBridgeServer with
+        // the matching shared secret. Without this the in-process bridge would
+        // reject every InProcessBridgeClient request as `unauthorized`.
+        if (_bridgeAuthToken is not null)
+        {
+            startInfo.Environment["WICK_BRIDGE_TOKEN"] = _bridgeAuthToken;
+        }
         if (headless) startInfo.ArgumentList.Add("--headless");
         startInfo.ArgumentList.Add("--path");
         startInfo.ArgumentList.Add(_projectPath);

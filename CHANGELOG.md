@@ -81,6 +81,19 @@ On `chore/post-audit-quick-wins`:
 
 ### Security
 
+- **In-process bridge auth.** `Wick.Runtime.Bridge.WickBridgeServer`
+  (loopback `127.0.0.1:7878`) now requires a shared-secret `auth` field
+  on every JSON-RPC request. The MCP server generates a 256-bit
+  cryptographic token at startup, passes it to the spawned Godot
+  subprocess via the `WICK_BRIDGE_TOKEN` environment variable, and
+  configures `InProcessBridgeClientFactory` to send the matching value
+  on every outgoing call. Constant-time comparison defeats per-byte
+  timing fingerprinting. Set `WICK_BRIDGE_AUTH_DISABLED=1` to opt out
+  during migration. Loopback binding alone was insufficient against
+  other local processes running as the same UID; the shared secret
+  upgrades the threat model to "anyone with the token". Editor + runtime
+  bridges (GDScript-served, ports 6505 / 7777) remain unauthenticated
+  and on the v0.6 roadmap — see SECURITY.md threat model.
 - `HeaderDelimitedRpcClient`: verbose StreamJsonRpc tracing now defaults
   off; gated behind `WICK_RPC_TRACE` env var. Previously every JSON-RPC
   frame including `textDocument/didOpen` payloads with full file

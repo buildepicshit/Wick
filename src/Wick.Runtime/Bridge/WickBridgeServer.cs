@@ -23,6 +23,7 @@ public sealed class WickBridgeServer : IDisposable
 {
     private readonly WickBridgeHandlers _handlers;
     private readonly ILogger<WickBridgeServer>? _logger;
+    private readonly string? _expectedAuthToken;
     private TcpListener? _listener;
     private CancellationTokenSource? _cts;
     private Task? _acceptLoop;
@@ -30,9 +31,31 @@ public sealed class WickBridgeServer : IDisposable
     /// <summary>The port the server is actually bound to. Resolved after <see cref="Start"/>.</summary>
     public int Port { get; private set; }
 
+    /// <summary>True when the server requires an <c>auth</c> field on every request.</summary>
+    public bool RequiresAuth => _expectedAuthToken is { Length: > 0 };
+
     public WickBridgeServer(WickBridgeHandlers handlers, ILogger<WickBridgeServer>? logger = null)
+        : this(handlers, expectedAuthToken: null, logger)
+    {
+    }
+
+    /// <summary>
+    /// Constructs a bridge server. When <paramref name="expectedAuthToken"/> is
+    /// non-null and non-empty, every request must include a matching
+    /// <c>"auth"</c> string field. Loopback-only binding is not a sufficient
+    /// trust boundary against other local processes running as the same UID;
+    /// the shared-secret check upgrades the threat model from "anyone on this
+    /// machine" to "anyone with the token". The token is supplied by the Wick
+    /// MCP server via the <c>WICK_BRIDGE_TOKEN</c> environment variable
+    /// inherited at process spawn time.
+    /// </summary>
+    public WickBridgeServer(
+        WickBridgeHandlers handlers,
+        string? expectedAuthToken,
+        ILogger<WickBridgeServer>? logger = null)
     {
         _handlers = handlers;
+        _expectedAuthToken = string.IsNullOrEmpty(expectedAuthToken) ? null : expectedAuthToken;
         _logger = logger;
     }
 
@@ -131,6 +154,19 @@ public sealed class WickBridgeServer : IDisposable
                             },
                         };
                     }
+                    else if (!IsAuthorized(root))
+                    {
+                        // Do not leak whether the token field was missing vs mismatched.
+                        response = new System.Collections.Generic.Dictionary<string, object?>
+                        {
+                            ["ok"] = false,
+                            ["error"] = new System.Collections.Generic.Dictionary<string, object?>
+                            {
+                                ["code"] = "unauthorized",
+                                ["message"] = "Bridge auth required. Caller must include a matching 'auth' field.",
+                            },
+                        };
+                    }
                     else
                     {
                         JsonElement? paramsEl = root.TryGetProperty("params", out var p) ? p.Clone() : null;
@@ -167,5 +203,39 @@ public sealed class WickBridgeServer : IDisposable
                 _logger?.LogWarning(ex, "Bridge client handler failed");
             }
         }
+    }
+
+    /// <summary>
+    /// Checks the request envelope's optional <c>auth</c> field against the
+    /// server's configured token using a constant-time comparison. Returns
+    /// true when no token is configured (auth disabled), or when the request
+    /// supplied a string field that exactly matches the configured token.
+    /// </summary>
+    private bool IsAuthorized(JsonElement requestRoot)
+    {
+        if (_expectedAuthToken is null) return true;
+        if (!requestRoot.TryGetProperty("auth", out var authEl)) return false;
+        if (authEl.ValueKind != JsonValueKind.String) return false;
+        var supplied = authEl.GetString();
+        return ConstantTimeEquals(supplied, _expectedAuthToken);
+    }
+
+    /// <summary>
+    /// Length-and-content-constant-time string comparison. Avoids early-exit
+    /// timing leaks that would let a peer fingerprint the configured token
+    /// one byte at a time. Returns false when either input is null.
+    /// Exposed as public so the comparison can be re-used (and unit-tested)
+    /// outside this class without re-inventing the constant-time loop.
+    /// </summary>
+    public static bool ConstantTimeEquals(string? a, string? b)
+    {
+        if (a is null || b is null) return false;
+        if (a.Length != b.Length) return false;
+        var diff = 0;
+        for (var i = 0; i < a.Length; i++)
+        {
+            diff |= a[i] ^ b[i];
+        }
+        return diff == 0;
     }
 }

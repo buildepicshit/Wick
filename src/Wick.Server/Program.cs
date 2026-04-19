@@ -46,7 +46,30 @@ builder.Services.AddHostedService<ExceptionPipeline>();
 // --- Sub-spec F: Wick.Runtime companion live-bridge registry ---
 // The factory holds the live TCP client; ProcessExceptionSource notifies it when it sees
 // a handshake envelope on the game's stderr. RuntimeGameQueryTools reads from it.
-builder.Services.AddSingleton<InProcessBridgeClientFactory>();
+//
+// In-process bridge auth: generate a random 256-bit token at startup and propagate
+// it both to the bridge client (via the factory) and to the spawned game (via env
+// var inherited at process spawn). Wick.Runtime.WickRuntime.Install reads the env
+// var and configures WickBridgeServer to require a matching `auth` field on every
+// request. Loopback binding is not a sufficient trust boundary against other local
+// processes running as the same UID; the shared secret upgrades the threat model
+// from "anyone on this machine" to "anyone with the token".
+//
+// Set WICK_BRIDGE_AUTH_DISABLED=1 to disable (escape hatch for migration / debug).
+var bridgeAuthDisabled = string.Equals(
+    Environment.GetEnvironmentVariable("WICK_BRIDGE_AUTH_DISABLED"),
+    "1", StringComparison.Ordinal);
+var bridgeAuthToken = bridgeAuthDisabled
+    ? null
+    : Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+StartupLog.BridgeAuth(startupLogger, bridgeAuthDisabled ? "disabled" : "enabled");
+
+builder.Services.AddSingleton<InProcessBridgeClientFactory>(_ =>
+{
+    var factory = new InProcessBridgeClientFactory();
+    factory.ConfigureAuthToken(bridgeAuthToken);
+    return factory;
+});
 
 // --- Runtime services (safe to register unconditionally; only consumed by runtime group) ---
 builder.Services.AddSingleton<GameProcessManager>();
@@ -57,7 +80,8 @@ builder.Services.AddSingleton<IGameLauncher>(sp => new ProcessGameLauncher(
     sp.GetRequiredService<LogBuffer>(),
     sp.GetRequiredService<ExceptionEnricher>(),
     sp.GetRequiredService<ILogger<ProcessGameLauncher>>(),
-    sp.GetRequiredService<InProcessBridgeClientFactory>()));
+    sp.GetRequiredService<InProcessBridgeClientFactory>(),
+    bridgeAuthToken: bridgeAuthToken));
 
 // --- Editor bridge (hosted service for live editor integration) ---
 builder.Services.AddSingleton<GodotBridgeManager>();
@@ -145,4 +169,7 @@ internal static partial class StartupLog
 {
     [LoggerMessage(Level = LogLevel.Information, Message = "Wick active tool groups: {Groups}")]
     public static partial void ActiveGroups(ILogger logger, string groups);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "In-process bridge auth: {Status}")]
+    public static partial void BridgeAuth(ILogger logger, string status);
 }
