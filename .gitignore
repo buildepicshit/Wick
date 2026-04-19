@@ -32,12 +32,38 @@ TestResults/
 *.log
 
 ## Local agent / tooling artifacts (never committed)
+## AGENTS.md is shared (cross-framework operating manual); per-agent local
+## state, caches, and rules go here. Repo positions itself as cross-framework
+## agent-friendly, so cover the broad agent-tool surface, not just Claude.
 .claude/
 CLAUDE.md
+.cursor/
+.continue/
+.aider*
+.codeium/
+.windsurf/
+.copilot/
+.junie/
+.zed/
 /docs/superpowers/
 *.tmp
 demo_output.txt
 quick_test.txt
+AGENT-NOTES.md
+SCRATCH.md
+
+## Local environment overrides (never committed)
+.env
+.env.local
+
+## Python venvs occasionally used by tooling (e.g. spec-lint)
+.venv/
+.venv-*/
+__pycache__/
+*.pyc
+*.egg-info/
+.ruff_cache/
+.pytest_cache/
 
 ## Scratch build / test / debug output (never committed)
 ## These accumulated during the 2026-04 Windows->Linux migration.

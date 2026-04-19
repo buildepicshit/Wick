@@ -11,7 +11,11 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
@@ -20,6 +24,8 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.x
+          cache: true
+          cache-dependency-path: Directory.Packages.props
 
       - name: Restore
         run: dotnet restore Wick.slnx
@@ -29,3 +35,11 @@ jobs:
 
       - name: Test
         run: dotnet test Wick.slnx --configuration Release --no-build --no-restore --logger "trx" --results-directory artifacts/TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: artifacts/TestResults
+          retention-days: 14
