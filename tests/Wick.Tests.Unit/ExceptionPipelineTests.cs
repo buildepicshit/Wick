@@ -38,6 +38,34 @@ public sealed class ExceptionPipelineTests
             NullLogger<ExceptionPipeline>.Instance);
     }
 
+    /// <summary>
+    /// Polls the buffer's count every 25ms up to <paramref name="timeoutMs"/> until it
+    /// reaches at least <paramref name="expectedCount"/>. Replaces the old fixed
+    /// <c>Task.Delay(200)</c>-then-assert pattern, which was flaky on slower CI
+    /// runners (Windows in particular). The 5-second cap is generous enough for any
+    /// real CI host while still bounding a genuine bug to a tractable wait.
+    /// </summary>
+    private static async Task WaitForBufferCountAsync(
+        ExceptionBuffer buffer,
+        int expectedCount,
+        CancellationToken ct,
+        int timeoutMs = 5000)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (DateTime.UtcNow < deadline)
+        {
+            if (buffer.Count >= expectedCount) return;
+            try
+            {
+                await Task.Delay(25, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+        }
+    }
+
     [Fact]
     public async Task Buffer_ReceivesEnrichedException()
     {
@@ -50,8 +78,8 @@ public sealed class ExceptionPipelineTests
         using var cts = new CancellationTokenSource();
         await pipeline.StartAsync(cts.Token);
 
-        // Give the background task time to consume the source
-        await Task.Delay(200, TestContext.Current.CancellationToken);
+        // Wait for the background task to consume the single injected exception.
+        await WaitForBufferCountAsync(buffer, 1, TestContext.Current.CancellationToken);
 
         await cts.CancelAsync();
         await pipeline.StopAsync(TestContext.Current.CancellationToken);
@@ -79,7 +107,7 @@ public sealed class ExceptionPipelineTests
 
         using var cts = new CancellationTokenSource();
         await pipeline.StartAsync(cts.Token);
-        await Task.Delay(200, TestContext.Current.CancellationToken);
+        await WaitForBufferCountAsync(buffer, 1, TestContext.Current.CancellationToken);
 
         await cts.CancelAsync();
         await pipeline.StopAsync(TestContext.Current.CancellationToken);
@@ -100,8 +128,9 @@ public sealed class ExceptionPipelineTests
         using var cts = new CancellationTokenSource();
         await pipeline.StartAsync(cts.Token);
 
-        // Let it consume a few exceptions
-        await Task.Delay(350, TestContext.Current.CancellationToken);
+        // Wait until the never-ending source has yielded at least one exception
+        // (the original 350ms fixed sleep was flaky on Windows CI).
+        await WaitForBufferCountAsync(buffer, 1, TestContext.Current.CancellationToken);
         var countBefore = buffer.Count;
         countBefore.Should().BeGreaterThan(0, "source should have yielded at least one exception");
 
@@ -128,7 +157,7 @@ public sealed class ExceptionPipelineTests
 
         using var cts = new CancellationTokenSource();
         await pipeline.StartAsync(cts.Token);
-        await Task.Delay(200, TestContext.Current.CancellationToken);
+        await WaitForBufferCountAsync(buffer, 2, TestContext.Current.CancellationToken);
 
         await cts.CancelAsync();
         await pipeline.StopAsync(TestContext.Current.CancellationToken);
