@@ -10,6 +10,103 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Phase 2 dogfooding integration work; v1.0-prep items tracked in
 `docs/planning/2026-04-16-phase-3-audit-findings.md`.
 
+Post-v0.5 external engineering audit follow-ups (canonical report at
+`/buildepicshit/analysis/reports/Wick-analysis.md`).
+On `chore/post-audit-quick-wins`:
+
+### Added
+
+- `.github/workflows/release.yml` — tag-driven NuGet release pipeline.
+  Pushing a `vX.Y.Z` tag matching the `<Version>` in `Directory.Build.props`
+  runs build + test + pack and publishes `Wick.Runtime` to nuget.org when
+  `NUGET_API_KEY` is configured. Without the secret, the `.nupkg` is uploaded
+  as a workflow artifact for manual push. Tag-vs-version mismatch fails the
+  job loudly. `.snupkg` symbols ship alongside.
+- `src/Wick.Runtime/README.md` — embedded as the NuGet package README.
+- `.env.example` — documents `WICK_GROUPS` / `WICK_GODOT_BIN` / `WICK_PROJECT_PATH`
+  with OS-specific Godot binary path examples.
+- `docs/README.md` — narrative routing index for the `docs/` tree.
+- `SceneContextParser` (`Wick.Providers.Godot`) — static parser for the
+  `editor_scene_tree` JSON shape, extracted as a unit-testable helper.
+- `WickBridgeErrorCode.Unknown` arm — distinguishes forward-compat
+  protocol drift from genuine server-internal errors.
+- `IGameLauncher.ProbeGodotBinary()` — pure-inspection cross-platform
+  binary resolution (handles `PATHEXT` on Windows).
+
+### Fixed
+
+- `GodotBridgeManager.GetSceneContext()` was hardcoded to return null,
+  making the headline demo's `"scene": { ... }` block unsupported on
+  every real game. Now async, queries `editor_scene_tree` with a 1.5s
+  bounded timeout, parses scene path + recursive node count via the new
+  `SceneContextParser`. `IGodotBridgeManagerAccessor.GetSceneContext` →
+  `GetSceneContextAsync(ct)` (interface change). Failure paths (timeout,
+  disconnect, malformed JSON) all yield `null` so the enrichment pipeline
+  never blocks on a stuck editor.
+- `runtime_launch_game` previously returned `Status: "running"` with no
+  `Error` even when `WICK_GODOT_BIN` was unset or pointed at a missing
+  binary; the launched process exited immediately, no exceptions were
+  captured, and the agent's next `runtime_diagnose` returned
+  `HasIssues: false`. The user concluded their game was healthy when
+  nothing ever ran. Now: `runtime_launch_game` pre-flights the binary
+  and returns `Status: "godot_binary_not_found"` with an actionable
+  `Error`. `runtime_status` surfaces `GodotBinaryConfigured` /
+  `GodotBinaryResolved` / `GodotBinaryFound` / `GodotBinaryError` for
+  agent-driven preflight.
+- `WickBridgeErrorCodeParsing.Parse` collapsed unknown wire codes into
+  `Internal`, making forward-compat drift indistinguishable from genuine
+  server failures in logs / triage. Now maps unknown codes to `Unknown`.
+
+### Changed — honesty-of-surface
+
+- `docs/tools-reference.md` — fully regenerated from
+  `src/Wick.Core/DefaultToolGroups.cs`. Every tool name now matches the
+  wire (`tool_catalog`/`tool_groups`/`tool_reset`, `runtime_launch_game`,
+  `c_sharp_*`, `dot_net_*`, `nu_get_*`, `editor_status`,
+  `runtime_query_scene_tree`, etc.). Header documents the snake_case
+  auto-conversion rule and the `DefaultToolGroupsTests` drift gate.
+- `docs/getting-started.md` — `WickRuntime.Initialize()` → `Install()`,
+  added the missing `_Process(double delta) => Tick()` callout that the
+  API actually requires. Demoted `dotnet add package Wick.Runtime` to a
+  pre-release `dotnet add reference` path until the package ships.
+- `docs/architecture.md` and `AGENTS.md` — dropped hard-coded test
+  counts; route to `STATUS.md` for live numbers.
+- `addons/wick/plugin.cfg` — version `1.0.0` → `0.5.0` (matches
+  `Directory.Build.props`); description points back at the .NET server URL.
+- `SECURITY.md` — added an explicit Threat Model section enumerating
+  in-scope vs out-of-scope so vulnerability reporters know whether to
+  file. Notably acknowledges the unauthenticated localhost JSON-RPC
+  bridges as a deliberate v1 trust-boundary choice (developer UID is the
+  trust boundary) with bridge auth on the v0.6 roadmap.
+
+### Security
+
+- `HeaderDelimitedRpcClient`: verbose StreamJsonRpc tracing now defaults
+  off; gated behind `WICK_RPC_TRACE` env var. Previously every JSON-RPC
+  frame including `textDocument/didOpen` payloads with full file
+  contents was unconditionally written to stderr (privacy leak vector
+  with no opt-out).
+- `CSharpLspClient` + `GodotDapClient`: capped `Content-Length` at 16
+  MiB to defend against the OOM-by-peer attack chain (peer-redirected
+  handshake → unbounded buffer alloc).
+
+### CI / hygiene
+
+- Cross-OS CI matrix (`ubuntu-latest`, `windows-latest`, `macos-latest`)
+  with NuGet caching and TRX artifact upload (14-day retention).
+- `.gitignore` covers `.cursor/`, `.continue/`, `.aider*`, `.codeium/`,
+  `.windsurf/`, `.copilot/`, `.junie/`, `.zed/`, `AGENT-NOTES.md`,
+  `SCRATCH.md`, `.env`/`.env.local`, plus a Python venv block.
+- `nuget.config` carries an explanatory comment for the deliberate
+  `<clear/>` (supply-chain hardening choice).
+
+### Removed
+
+- `Wick.sln` — legacy solution file that only registered 2 of 6 source
+  projects. Modern `.slnx` is canonical everywhere (CI, CONTRIBUTING,
+  getting-started); the legacy `.sln` was a foot-gun for any tool that
+  prefers `.sln` over `.slnx`.
+
 ## [0.5.0] — 2026-04-16
 
 Phase 3 engineering-excellence + OSS hardening audit. 32/32 audit issues closed across

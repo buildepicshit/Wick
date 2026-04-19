@@ -1,0 +1,119 @@
+name: Release
+
+# Tag-driven NuGet release for Wick.Runtime.
+# Triggered by pushing a tag of the form vX.Y.Z (e.g. v0.6.0). The version
+# embedded in the package is taken from Directory.Build.props, NOT from the
+# tag — keep them in sync manually for the v1 cycle.
+#
+# Required repository secret: NUGET_API_KEY (an API key with push rights to the
+# Wick.Runtime package on nuget.org). The job is a no-op without it; the
+# tag-build will still upload the .nupkg as a workflow artifact for manual push.
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Pack only, do not push to NuGet (default: true)'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  pack:
+    name: Pack Wick.Runtime
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+          cache: true
+          cache-dependency-path: Directory.Packages.props
+
+      - name: Read package version
+        id: version
+        # Source of truth is Directory.Build.props <Version>X.Y.Z</Version>.
+        # We fail loudly if it can't be found rather than guessing from the tag.
+        run: |
+          version=$(grep -oP '(?<=<Version>)[^<]+' Directory.Build.props | head -1)
+          if [ -z "$version" ]; then
+            echo "ERROR: could not read <Version> from Directory.Build.props" >&2
+            exit 1
+          fi
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+          echo "Packing Wick.Runtime $version"
+
+      - name: Verify tag matches version
+        if: github.event_name == 'push'
+        run: |
+          tag="${GITHUB_REF#refs/tags/v}"
+          if [ "$tag" != "${{ steps.version.outputs.value }}" ]; then
+            echo "ERROR: tag v$tag does not match Directory.Build.props version ${{ steps.version.outputs.value }}" >&2
+            exit 1
+          fi
+
+      - name: Restore
+        run: dotnet restore Wick.slnx
+
+      - name: Build (Release)
+        run: dotnet build Wick.slnx --configuration Release --no-restore
+
+      - name: Test (Release)
+        run: dotnet test Wick.slnx --configuration Release --no-build --no-restore --logger "trx" --results-directory artifacts/TestResults
+
+      - name: Pack Wick.Runtime
+        run: dotnet pack src/Wick.Runtime/Wick.Runtime.csproj --configuration Release --no-build --no-restore --output artifacts/nuget
+
+      - name: Upload .nupkg as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wick-runtime-nupkg-${{ steps.version.outputs.value }}
+          path: artifacts/nuget/*.*nupkg
+          retention-days: 90
+
+  publish:
+    name: Publish to NuGet
+    needs: pack
+    runs-on: ubuntu-latest
+    # Push only happens for real tag events when the api key is configured AND
+    # this is not a manual dry-run.
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.dry_run == false)
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: wick-runtime-nupkg-${{ needs.pack.outputs.version }}
+          path: artifacts/nuget
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+
+      - name: Push to nuget.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if [ -z "$NUGET_API_KEY" ]; then
+            echo "::warning::NUGET_API_KEY secret is not set; skipping nuget.org push. The .nupkg artifact above can be pushed manually."
+            exit 0
+          fi
+          dotnet nuget push 'artifacts/nuget/*.nupkg' \
+            --api-key "$NUGET_API_KEY" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+          dotnet nuget push 'artifacts/nuget/*.snupkg' \
+            --api-key "$NUGET_API_KEY" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate || true

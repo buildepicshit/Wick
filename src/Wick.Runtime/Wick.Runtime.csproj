@@ -12,12 +12,28 @@
     <AssemblyName>Wick.Runtime</AssemblyName>
     <Description>In-process runtime companion for Wick — captures C# exceptions, logs, and live state from a running Godot game.</Description>
 
-    <!-- NuGet package metadata (packing disabled until Phase 4 ships the pipeline) -->
+    <!--
+      NuGet package metadata. Packaging is wired through the release.yml CI
+      workflow: a tag of the form vX.Y.Z runs `dotnet pack` and publishes to
+      nuget.org. GeneratePackageOnBuild stays false so a normal `dotnet build`
+      doesn't litter artifacts/ with .nupkg files.
+    -->
     <PackageId>Wick.Runtime</PackageId>
     <Authors>Build Epic Shit Studios</Authors>
     <PackageTags>godot;mcp;exception-handling;diagnostics</PackageTags>
+    <PackageProjectUrl>https://github.com/buildepicshit/Wick</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/buildepicshit/Wick</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
+
+    <!-- Source Link / deterministic build for downstream debugging. -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
     <!--
       CA1848 nags us to use LoggerMessage source generators for every Log call.
@@ -29,6 +45,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
