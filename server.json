@@ -1,0 +1,43 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.buildepicshit/wick",
+  "title": "Wick",
+  "description": "Roslyn-enriched C# exception telemetry for Godot Engine. Captures crashes from Godot C# games and hands the AI full source context (method body, caller chain, scene state) in a single MCP call. Requires .NET 10 SDK and the Godot bridge addon from the main repo.",
+  "websiteUrl": "https://github.com/buildepicshit/Wick",
+  "repository": {
+    "url": "https://github.com/buildepicshit/Wick",
+    "source": "github"
+  },
+  "version": "1.0.0",
+  "packages": [
+    {
+      "registryType": "nuget",
+      "registryBaseUrl": "https://api.nuget.org/v3/index.json",
+      "identifier": "Wick.Server",
+      "version": "1.0.0",
+      "runtimeHint": "dnx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "WICK_GODOT_BIN",
+          "description": "Absolute path to your Godot 4.6.1+ binary (with .NET/Mono support).",
+          "isRequired": true,
+          "format": "filepath"
+        },
+        {
+          "name": "WICK_PROJECT_PATH",
+          "description": "Absolute path to your Godot project root (the directory containing project.godot).",
+          "isRequired": true,
+          "format": "filepath"
+        },
+        {
+          "name": "WICK_GROUPS",
+          "description": "Comma-separated tool pillars to activate: core, runtime, csharp, build, scene. Or 'all'. Defaults to 'core'.",
+          "default": "core,runtime,csharp,build"
+        }
+      ]
+    }
+  ]
+}

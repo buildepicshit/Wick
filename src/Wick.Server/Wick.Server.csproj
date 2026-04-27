@@ -5,6 +5,31 @@
     <RootNamespace>Wick.Server</RootNamespace>
     <AssemblyName>Wick.Server</AssemblyName>
     <Description>Wick MCP server for Godot Engine — C# and GDScript dual-language support.</Description>
+
+    <!--
+      NuGet packaging as a .NET tool. Distribution path: users invoke via
+      `dnx Wick.Server@X.Y.Z` (ships with .NET 10 SDK) or `dotnet tool install`.
+      Wick.Server depends on Build.Locator finding the user's installed .NET
+      SDK at runtime, so the .NET 10 SDK (not just the runtime) is a hard
+      prerequisite — surfaced in the package README.
+      Pack on tag push via release.yml; GeneratePackageOnBuild stays false so
+      a normal `dotnet build` doesn't litter artifacts/ with .nupkg files.
+    -->
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>wick-server</ToolCommandName>
+    <PackageId>Wick.Server</PackageId>
+    <Authors>Build Epic Shit Studios</Authors>
+    <PackageTags>godot;mcp;model-context-protocol;roslyn;csharp;exception-handling;diagnostics</PackageTags>
+    <PackageProjectUrl>https://github.com/buildepicshit/Wick</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/buildepicshit/Wick</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+
+    <!-- Source Link / deterministic build for downstream debugging. -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +45,10 @@
     <ProjectReference Include="..\Wick.Providers.GDScript\Wick.Providers.GDScript.csproj" />
     <ProjectReference Include="..\Wick.Providers.CSharp\Wick.Providers.CSharp.csproj" />
     <ProjectReference Include="..\Wick.Providers.Godot\Wick.Providers.Godot.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
