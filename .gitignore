@@ -31,12 +31,11 @@ TestResults/
 ## Build artifacts
 *.log
 
-## Local agent / tooling artifacts (never committed)
-## AGENTS.md is shared (cross-framework operating manual); per-agent local
-## state, caches, and rules go here. Repo positions itself as cross-framework
-## agent-friendly, so cover the broad agent-tool surface, not just Claude.
-.claude/
-CLAUDE.md
+## Local user-specific agent / tooling artifacts (never committed)
+.claude/settings.local.json
+.codex
+.mcp.json
+.mcp.local.json
 .cursor/
 .continue/
 .aider*

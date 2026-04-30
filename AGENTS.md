@@ -2,13 +2,42 @@
 
 > This file is the machine-readable operating manual for Wick, following the cross-framework [AGENTS.md](https://agents.md/) standard. It is read automatically by Codex, Cursor, Copilot, Gemini CLI, Claude Code (via memory), Antigravity, Aider, goose, Zed, JetBrains Junie, and any other agent framework that supports the standard. Human contributors should start at [`CONTRIBUTING.md`](CONTRIBUTING.md); current project state lives in [`STATUS.md`](STATUS.md). This file is the operating context your tools need to help you ship good code.
 
+## BES Fleet Operating Model
+
+This repo participates in the BES spec-first agent fleet. The machine-level
+contract is `/var/home/hasnobeef/buildepicshit/.agents/OPERATING_MODEL.md`;
+repo-local copies of the shared spec template, workflows, and skills live under
+`.agents/`.
+
+Documentation placement rules live in `.agents/DOCUMENTATION_GUIDE.md`. Read it
+before creating, moving, archiving, or publishing docs/specs. In short:
+`.agents/specs/` is for agent/Symphony task control; durable product docs live
+in this repo's native docs path.
+
+Non-trivial work requires an approved executable `SPEC.md` before
+implementation. Use `.agents/specs/SPEC.template.md`, then run the lifecycle:
+orient, author spec, review spec, approve, execute, verify, report, and route
+durable lessons to spec evidence records drafts. Raw Claude/Codex memories
+are supporting evidence only; checked-in docs and this file remain authoritative.
+
+Claude must enter through `CLAUDE.md`, which imports this file. Codex and other
+AGENTS-aware tools read this file directly. Keep both surfaces aligned.
+
+Shared task skills live in `.agents/skills/`; Claude-native copies live in
+`.claude/skills/`. Use `.agents/skills/repo-orientation` at task start,
+`.agents/skills/spec-driven-development` for non-trivial work,
+`.agents/skills/verification` before completion, and
+`.agents/skills/spec-evidence-governance` only to propose spec evidence candidates.
+Do not build from raw memory. Build from approved specs, repo docs, and fresh
+verification evidence.
+
 ## What Wick Is
 
 Wick is a native-C# [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server for Godot Engine, providing AI coding assistants with **Roslyn-enriched C# runtime exception telemetry** exposed over MCP — something no other Godot MCP server does today. It is a clean-room reimplementation inspired by [GoPeak](https://github.com/HaD0Yun/Gopeak-godot-mcp) (MIT, © 2025 Solomon Elias) plus C#-specific value-adds the Node.js-based originals cannot provide.
 
 **The unique value proposition:** Godot teams using C# get Roslyn-powered runtime exception enrichment (source mapping, local variable capture, Roslyn syntax context), `csharp-ls` LSP integration, .NET DAP debugging (planned), build diagnostic parsing with Roslyn enrichment, and NuGet management — through the same MCP server that also handles GDScript parsing, scene tools, and the Godot editor/runtime bridge. The primary pitch is Roslyn-enriched C# telemetry; GDScript and scene tools are supporting pillars, not the main value proposition.
 
-**Architectural shape you must understand:** Wick is an **external process** — it does NOT run inside Godot. Godot talks to it over stdio (MCP protocol to the AI client) and TCP JSON-RPC (bridge between Godot's GDScript plugin at `addons/wick/` and the Wick server at ports 6505 editor / 7777 runtime). This architecture is load-bearing for two reasons: (1) it lets Wick target `net10.0` even though Godot 4.6.1's runtime is stuck on `net8.0`, and (2) it keeps the Godot editor responsive while the server does heavy analysis work.
+**Architectural shape you must understand:** Wick.Server is an **external process** — it does NOT run inside Godot. Godot talks to it over stdio (MCP protocol to the AI client) and TCP JSON-RPC (bridge between Godot's GDScript plugin at `addons/wick/` and the Wick server at ports 6505 editor / 7777 runtime). This architecture is load-bearing for two reasons: (1) it lets the server/provider/core projects target `net10.0` even though Godot 4.6.1's runtime uses `net8.0`, and (2) it keeps the Godot editor responsive while the server does heavy analysis work. The optional `Wick.Runtime` NuGet companion is the exception: it loads in-process with the Godot game and must remain `net8.0` for current stable desktop/runtime work unless a future explicit Android export decision changes that package contract.
 
 **Current phase:** Phase 2 — Public Testing (real Godot C# projects, not synthetic dogfood targets). Phase 1 feature completeness achieved 2026-04-12. First public-test pass landed 2026-04-15 → 2026-04-17 against the BES Studios splash project; writeup at [`docs/public-testing/2026-04-15-bes-splash-3d-pass.md`](docs/public-testing/2026-04-15-bes-splash-3d-pass.md). See [`STATUS.md`](STATUS.md) for the up-to-date phase, recently shipped PRs, test and build state, and blockers.
 
@@ -27,7 +56,7 @@ dotnet build Wick.slnx --configuration Release && dotnet test Wick.slnx --config
 
 ### Hard requirements
 
-- **.NET 10 / C# 14 single-target `net10.0`.** `global.json` pins `10.0.201` with `rollForward: latestFeature` and `allowPrerelease: true`. Wick has no Godot runtime constraint because nothing it ships gets loaded into a Godot process — the Godot plugin is pure GDScript, the bridge is JSON-RPC over TCP. Do not multi-target. Do not downshift to `net8.0`.
+- **.NET 10 / C# 14 default with one `net8.0` runtime exception.** `global.json` pins `10.0.201` with `rollForward: latestFeature` and `allowPrerelease: true`. `Directory.Build.props` keeps Wick.Server, Wick.Core, provider projects, tests, and console harnesses on `net10.0`. `src/Wick.Runtime/Wick.Runtime.csproj` intentionally overrides to `net8.0` because it is loaded in-process by Godot's current stable .NET runtime. Do not multi-target. Do not downshift server/provider/core/test projects for Godot compatibility. Do not retarget `Wick.Runtime` unless a future explicit Android export decision or reviewed package-contract change requires it.
 - **0 warnings, 0 failures.** `TreatWarningsAsErrors=true` is enforced repo-wide via `Directory.Build.props`. Any warning fails the build. This is not aspirational. Do not use `#pragma warning disable` or blanket `<NoWarn>` — fix the underlying issue. Narrow `<NoWarn>` for a specific diagnostic ID is acceptable only with a comment explaining why.
 - **xUnit v3 (3.2.2) with `Microsoft.NET.Test.Sdk` 18.4.0.** Unit tests live in `tests/Wick.Tests.Unit/`. Test classes follow a `ClassUnderTest_Method_ExpectedBehavior` naming convention. Use **FluentAssertions** for readable assertions (`result.Should().Be(expected)`) and **NSubstitute** for mocks. Tests must be deterministic — no network calls, no real file system side effects, no time-dependent behavior.
 - **Current test count:** see [`STATUS.md`](STATUS.md) frontmatter (`tests.total` / `tests.passing` / `tests.failing`) for live counts. Hard-coding numbers here causes drift across releases — STATUS.md is the single source of truth.
@@ -44,7 +73,7 @@ All NuGet versions live in **`Directory.Packages.props`** at the repo root. Indi
 - `StreamJsonRpc` — `2.24.84`
 - `Microsoft.SourceLink.GitHub` — `8.0.0` (CI-only, deterministic builds + symbol navigation)
 
-Project settings (`TargetFramework`, `Nullable`, `ImplicitUsings`, `LangVersion`, `TreatWarningsAsErrors`) come from `Directory.Build.props` and must NOT be duplicated in individual `.csproj` files.
+Project settings (`TargetFramework`, `Nullable`, `ImplicitUsings`, `LangVersion`, `TreatWarningsAsErrors`) come from `Directory.Build.props` and must NOT be duplicated in individual `.csproj` files, except for the explicit `Wick.Runtime` `net8.0` override.
 
 ## Architecture
 
@@ -186,7 +215,7 @@ The Wick remote is configured as SSH (`git@github.com:buildepicshit/Wick.git`). 
 - Bare `catch { }` swallowing exceptions. Catch specific types, log, and either re-throw or document why swallowing is correct.
 - Adding `Version=` attributes to `<PackageReference>` elements. All versions belong in `Directory.Packages.props`.
 - Duplicating `TargetFramework`, `Nullable`, `ImplicitUsings`, etc. in individual `.csproj` files — these come from `Directory.Build.props`. The two console test projects (`BridgeConsoleTest.csproj`, `LspConsoleTest.csproj`) were fixed in PR #11 to inherit properly.
-- Multi-targeting to `net8.0` "for compatibility." Wick is external to Godot; there is no compatibility constraint. Single-target `net10.0`.
+- Multi-targeting or downshifting server/provider/core/test projects to `net8.0` "for compatibility." Wick.Server is external to Godot; only `Wick.Runtime` is loaded in-process and remains single-target `net8.0`.
 - Committing scratch files (`build_output.txt`, `obj_*_build.txt`, `bridge_*.txt`, `test_output.txt`, `out.txt`). `.gitignore` covers the common patterns; stay vigilant.
 - AI attribution in commits or PRs. Zero tolerance.
 - Claiming features exist in `README.md` or `STATUS.md` that don't work end-to-end.
@@ -229,7 +258,7 @@ tests/
 └── LspConsoleTest/            # Interactive LSP smoke test (not automated, NOT in slnx)
 
 .github/workflows/ci.yml            # Build + test on push/PR, .NET 10.x runner
-Directory.Build.props               # Repo-wide project defaults
+Directory.Build.props               # Repo-wide net10.0 defaults; Wick.Runtime overrides to net8.0
 Directory.Packages.props            # Central NuGet version management
 global.json                         # .NET 10.0.201 pin
 Wick.slnx                      # Solution file (modern .slnx format only — Wick.sln removed in v0.6 cycle)
