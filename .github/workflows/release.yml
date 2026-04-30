@@ -94,7 +94,7 @@ jobs:
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.dry_run == false)
 
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: wick-nuget-packages-${{ needs.pack.outputs.version }}
           path: artifacts/nuget
