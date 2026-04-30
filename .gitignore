@@ -31,11 +31,15 @@ TestResults/
 ## Build artifacts
 *.log
 
-## Local user-specific agent / tooling artifacts (never committed)
-.claude/settings.local.json
+## Local orchestration/tooling artifacts (never committed)
+.agents/
+.claude/
 .codex
 .mcp.json
 .mcp.local.json
+AGENTS.md
+CLAUDE.md
+WORKFLOW.md
 .cursor/
 .continue/
 .aider*

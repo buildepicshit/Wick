@@ -1,4 +1,0 @@
-{
-  "$comment": "Shared project settings. Local permissions belong in .claude/settings.local.json.",
-  "autoMemoryEnabled": false
-}
