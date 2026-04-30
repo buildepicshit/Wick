@@ -79,7 +79,7 @@ jobs:
         run: dotnet pack src/Wick.Server/Wick.Server.csproj --configuration Release --no-build --no-restore -maxcpucount:1 --output artifacts/nuget
 
       - name: Upload .nupkg as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wick-nuget-packages-${{ steps.version.outputs.value }}
           path: artifacts/nuget/*.*nupkg
