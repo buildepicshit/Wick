@@ -1,12 +1,12 @@
 name: Release
 
-# Tag-driven NuGet release for Wick.Runtime.
+# Tag-driven NuGet release for Wick packages.
 # Triggered by pushing a tag of the form vX.Y.Z (e.g. v0.6.0). The version
 # embedded in the package is taken from Directory.Build.props, NOT from the
 # tag — keep them in sync manually for the v1 cycle.
 #
 # Required repository secret: NUGET_API_KEY (an API key with push rights to the
-# Wick.Runtime package on nuget.org). The job is a no-op without it; the
+# Wick.Runtime and Wick.Server packages on nuget.org). The job is a no-op without it; the
 # tag-build will still upload the .nupkg as a workflow artifact for manual push.
 
 on:
@@ -26,7 +26,7 @@ permissions:
 
 jobs:
   pack:
-    name: Pack Wick.Runtime
+    name: Pack Wick packages
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.value }}
@@ -52,7 +52,7 @@ jobs:
             exit 1
           fi
           echo "value=$version" >> "$GITHUB_OUTPUT"
-          echo "Packing Wick.Runtime $version"
+          echo "Packing Wick packages $version"
 
       - name: Verify tag matches version
         if: github.event_name == 'push'
@@ -64,21 +64,24 @@ jobs:
           fi
 
       - name: Restore
-        run: dotnet restore Wick.slnx
+        run: dotnet restore Wick.slnx -maxcpucount:1
 
       - name: Build (Release)
-        run: dotnet build Wick.slnx --configuration Release --no-restore
+        run: dotnet build Wick.slnx --configuration Release --no-restore -maxcpucount:1
 
       - name: Test (Release)
-        run: dotnet test Wick.slnx --configuration Release --no-build --no-restore --logger "trx" --results-directory artifacts/TestResults
+        run: dotnet test Wick.slnx --configuration Release --no-build --no-restore -maxcpucount:1 --logger "trx" --results-directory artifacts/TestResults
 
       - name: Pack Wick.Runtime
-        run: dotnet pack src/Wick.Runtime/Wick.Runtime.csproj --configuration Release --no-build --no-restore --output artifacts/nuget
+        run: dotnet pack src/Wick.Runtime/Wick.Runtime.csproj --configuration Release --no-build --no-restore -maxcpucount:1 --output artifacts/nuget
+
+      - name: Pack Wick.Server
+        run: dotnet pack src/Wick.Server/Wick.Server.csproj --configuration Release --no-build --no-restore -maxcpucount:1 --output artifacts/nuget
 
       - name: Upload .nupkg as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wick-runtime-nupkg-${{ steps.version.outputs.value }}
+          name: wick-nuget-packages-${{ steps.version.outputs.value }}
           path: artifacts/nuget/*.*nupkg
           retention-days: 90
 
@@ -93,7 +96,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: wick-runtime-nupkg-${{ needs.pack.outputs.version }}
+          name: wick-nuget-packages-${{ needs.pack.outputs.version }}
           path: artifacts/nuget
 
       - name: Setup .NET

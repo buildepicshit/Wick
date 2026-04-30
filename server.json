@@ -35,7 +35,7 @@
         {
           "name": "WICK_GROUPS",
           "description": "Comma-separated tool pillars to activate: core, runtime, csharp, build, scene. Or 'all'. Defaults to 'core'.",
-          "default": "core,runtime,csharp,build"
+          "default": "core"
         }
       ]
     }

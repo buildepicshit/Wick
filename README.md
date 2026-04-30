@@ -41,7 +41,7 @@ Wick has two parts: a Godot-side bridge addon (`/addons/wick/`) and the .NET MCP
 ```bash
 git clone https://github.com/buildepicshit/Wick.git
 cd Wick
-dotnet build Wick.slnx --configuration Release
+dotnet build Wick.slnx --configuration Release -maxcpucount:1
 ```
 
 ### MCP Configuration
@@ -110,7 +110,9 @@ Wick runs as an external process -- it does NOT run inside Godot. Communication:
 - **TCP 7777** -- runtime bridge (running game to Wick server)
 - **TCP 7878** -- Wick.Runtime companion bridge (in-process to Wick server)
 
-This architecture lets Wick target .NET 10 even though Godot 4.6.1's runtime is stuck on .NET 8.
+This architecture lets the Wick server and provider projects target .NET 10
+while the optional in-process `Wick.Runtime` companion stays on `net8.0` for
+Godot 4.6.1's current stable .NET runtime.
 
 ## Attribution
 

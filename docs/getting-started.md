@@ -21,10 +21,10 @@ git clone https://github.com/buildepicshit/Wick.git
 cd Wick
 
 # Build (must produce 0 warnings — TreatWarningsAsErrors is enforced)
-dotnet build Wick.slnx --configuration Release
+dotnet build Wick.slnx --configuration Release -maxcpucount:1
 
 # Run tests to verify
-dotnet test Wick.slnx --configuration Release
+dotnet test Wick.slnx --configuration Release -maxcpucount:1
 ```
 
 ### 2. Install the Godot Plugin

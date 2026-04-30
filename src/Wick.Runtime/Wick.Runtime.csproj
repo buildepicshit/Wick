@@ -3,8 +3,9 @@
   <!--
     Wick.Runtime is the ONE exception to the studio .NET 10 default.
     It must target net8.0 because Godot 4.6.1 hosts it in-process via the
-    Mono/.NET integration, which is pinned to net8.0.
-    This exception is part of the public runtime packaging contract.
+    Mono/.NET integration, which is pinned to net8.0 for current stable
+    desktop/runtime work. This exception is part of the public runtime
+    packaging contract.
   -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>

@@ -23,10 +23,11 @@
 ## Verification
 
 <!--
-Per AGENTS.md: PR descriptions must include real, fresh verification output —
-never "should pass." Paste the actual tail of:
+PR descriptions must include real, fresh verification output, never
+"should pass." Paste the actual tail of:
 
-  dotnet build Wick.slnx --configuration Release && dotnet test Wick.slnx --configuration Release
+  dotnet build Wick.slnx --configuration Release -maxcpucount:1
+  dotnet test Wick.slnx --configuration Release -maxcpucount:1
 
 Below. If the change touches docs/config only, paste the smallest verification
 appropriate (e.g., `dotnet build` summary line).

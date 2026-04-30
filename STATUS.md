@@ -12,6 +12,7 @@ next_milestone: GDScript-side bridge auth (editor 6505 + runtime 7777) — see S
 version: 1.0.0
 dotnet: 10.0.201
 target_framework: net10.0
+runtime_target_framework: net8.0
 license: MIT
 ---
 
@@ -24,7 +25,7 @@ license: MIT
 Wick is a native .NET 10 Model Context Protocol server that captures unhandled C# exceptions from a running Godot game, enriches each exception with Roslyn-powered source context (calling method body, surrounding lines, caller chain), and exposes the enriched exception stream to AI coding assistants over MCP. The value proposition is narrow and deliberate: **when a Godot C# game crashes, the agent sees the exception with full source-level context and can fix it in one turn instead of ten.**
 
 **Version:** `1.0.0` (sourced from `Directory.Build.props`; MCP server reads it at startup)
-**.NET:** `10.0.201` SDK, targeting `net10.0`, C# 14
+**.NET:** `10.0.201` SDK; server/provider/core/test projects target `net10.0`, while `Wick.Runtime` targets `net8.0` for Godot's in-process runtime
 **Target Godot:** `4.6.1-stable-mono`
 **License:** MIT
 
@@ -56,9 +57,9 @@ Live counts are in this file's YAML frontmatter (`tests.total` / `tests.passing`
 
 - Build warnings: `0` (`TreatWarningsAsErrors=true` via `Directory.Build.props`)
 - Build errors: `0`
-- Framework: `net10.0`
+- Frameworks: server/provider/core/test projects `net10.0`; `Wick.Runtime` `net8.0`
 
-Canonical verification: `dotnet build Wick.slnx --configuration Release && dotnet test Wick.slnx --configuration Release`.
+Canonical verification: `dotnet build Wick.slnx --configuration Release -maxcpucount:1 && dotnet test Wick.slnx --configuration Release -maxcpucount:1`.
 
 ## What's In Flight
 

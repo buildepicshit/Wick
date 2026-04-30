@@ -28,13 +28,13 @@ jobs:
           cache-dependency-path: Directory.Packages.props
 
       - name: Restore
-        run: dotnet restore Wick.slnx
+        run: dotnet restore Wick.slnx -maxcpucount:1
 
       - name: Build
-        run: dotnet build Wick.slnx --configuration Release --no-restore
+        run: dotnet build Wick.slnx --configuration Release --no-restore -maxcpucount:1
 
       - name: Test
-        run: dotnet test Wick.slnx --configuration Release --no-build --no-restore --logger "trx" --results-directory artifacts/TestResults
+        run: dotnet test Wick.slnx --configuration Release --no-build --no-restore -maxcpucount:1 --logger "trx" --results-directory artifacts/TestResults
 
       - name: Upload test results
         if: always()
