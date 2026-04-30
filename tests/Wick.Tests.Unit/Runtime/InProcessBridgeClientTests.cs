@@ -15,6 +15,8 @@ internal sealed class StubTcpServer : System.IDisposable
 {
     private readonly TcpListener _listener;
     private readonly string _response;
+    private readonly System.Threading.CancellationTokenSource _shutdown = new();
+    private readonly System.Threading.Tasks.Task _serverTask;
     public int Port => ((IPEndPoint)_listener.LocalEndpoint).Port;
     public string? LastRequest { get; private set; }
 
@@ -23,40 +25,52 @@ internal sealed class StubTcpServer : System.IDisposable
         _response = response;
         _listener = new TcpListener(IPAddress.Loopback, 0);
         _listener.Start();
-        _ = System.Threading.Tasks.Task.Run(AcceptLoopAsync);
+        _serverTask = AcceptAndRespondAsync(_shutdown.Token);
     }
 
-    private async System.Threading.Tasks.Task AcceptLoopAsync()
+    private async System.Threading.Tasks.Task AcceptAndRespondAsync(System.Threading.CancellationToken ct)
     {
         try
         {
-            while (true)
-            {
-                var client = await _listener.AcceptTcpClientAsync().ConfigureAwait(false);
-                _ = System.Threading.Tasks.Task.Run(() => HandleAsync(client));
-            }
+            using var client = await _listener.AcceptTcpClientAsync(ct).ConfigureAwait(false);
+            await HandleAsync(client, ct).ConfigureAwait(false);
         }
+        catch (System.OperationCanceledException) when (ct.IsCancellationRequested) { }
         catch (SocketException) { }
         catch (System.ObjectDisposedException) { }
     }
 
-    private async System.Threading.Tasks.Task HandleAsync(TcpClient client)
+    private async System.Threading.Tasks.Task HandleAsync(TcpClient client, System.Threading.CancellationToken ct)
     {
-        using (client)
+        try
         {
-            try
-            {
-                using var stream = client.GetStream();
-                using var reader = new StreamReader(stream, Encoding.UTF8);
-                using var writer = new StreamWriter(stream, new UTF8Encoding(false)) { AutoFlush = true, NewLine = "\n" };
-                LastRequest = await reader.ReadLineAsync().ConfigureAwait(false);
-                await writer.WriteLineAsync(_response).ConfigureAwait(false);
-            }
-            catch { }
+            using var stream = client.GetStream();
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            using var writer = new StreamWriter(stream, new UTF8Encoding(false)) { AutoFlush = true, NewLine = "\n" };
+            LastRequest = await reader.ReadLineAsync(ct).ConfigureAwait(false);
+            await writer.WriteLineAsync(_response.AsMemory(), ct).ConfigureAwait(false);
         }
+        catch (System.OperationCanceledException) when (ct.IsCancellationRequested) { }
+        catch (IOException) { }
+        catch (SocketException) { }
     }
 
-    public void Dispose() => _listener.Stop();
+    public void Dispose()
+    {
+        _shutdown.Cancel();
+        _listener.Stop();
+        try
+        {
+            _serverTask.Wait(System.TimeSpan.FromSeconds(1));
+        }
+        catch (System.AggregateException ex) when (ex.InnerException is System.OperationCanceledException or SocketException or System.ObjectDisposedException)
+        {
+        }
+        finally
+        {
+            _shutdown.Dispose();
+        }
+    }
 }
 
 public sealed class InProcessBridgeClientTests
