@@ -9,8 +9,8 @@ namespace Wick.Tests.Unit.Drift;
 /// Background: the 2026-04-19 re-evaluation (F1, F2, F5-new) surfaced three
 /// instances of the same drift pattern in the v1.0 push — STATUS.md frontmatter
 /// said one number for tests, the body table said another, the footer date
-/// disagreed with the frontmatter date, and AGENTS.md hard-coded test counts
-/// the CHANGELOG claimed it had dropped. The fix: make STATUS.md's YAML
+/// disagreed with the frontmatter date, and historical contributor guidance
+/// hard-coded test counts the CHANGELOG claimed it had dropped. The fix: make STATUS.md's YAML
 /// frontmatter the single source of truth for version + test counts + last
 /// updated, drop the duplicate body table, and gate the contract here.
 ///

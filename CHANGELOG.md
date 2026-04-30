@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed — honesty-of-surface
 
 - **Phase 2 reframed from "dogfooding" to "public testing"** across
-  STATUS.md, AGENTS.md, and `docs/planning/2026-04-11-roadmap-to-public-launch.md`.
+  STATUS.md, CONTRIBUTING.md, and `docs/planning/2026-04-11-roadmap-to-public-launch.md`.
   The original plan named Floom (an F# CLI, not a Godot project) and
   UsefulIdiots (currently doc-only after a fresh re-init) as dogfood
   targets — neither is a valid Wick target. Public testing routes Wick
@@ -111,7 +111,7 @@ ubuntu/windows/macos; 0 warnings; first NuGet publication of
   added the missing `_Process(double delta) => Tick()` callout that the
   API actually requires. Demoted `dotnet add package Wick.Runtime` to a
   pre-release `dotnet add reference` path until the package ships.
-- `docs/architecture.md` and `AGENTS.md` — dropped hard-coded test
+- `docs/architecture.md` and `CONTRIBUTING.md` — dropped hard-coded test
   counts; route to `STATUS.md` frontmatter (`tests.total`) for live
   numbers. Body table also removed from `STATUS.md` so frontmatter is
   the unambiguous source of truth — same regenerate-from-source pattern
@@ -288,7 +288,7 @@ Foundation stabilization, Linux migration recovery, test infrastructure overhaul
   invocation tests, SharpPeakServerFixture (PR #17)
 - SharpPeak.Tests.Integration project scaffold
 - Initial STATUS.md with YAML frontmatter (PR #12)
-- AGENTS.md as canonical cross-framework operating manual (PR #15)
+- Public contributor workflow and engineering standards documentation (PR #15)
 
 ### Changed
 

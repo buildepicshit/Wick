@@ -17,7 +17,7 @@ license: MIT
 
 # Wick — Project Status
 
-> **Snapshot as of 2026-04-19.** This file answers *"where is Wick right now?"* — current phase, recent work, test and build state, blockers, next steps. Updated after every significant session. Forward-looking roadmap: [`docs/planning/2026-04-11-roadmap-to-public-launch.md`](docs/planning/2026-04-11-roadmap-to-public-launch.md). Engineering standards and architecture: [`AGENTS.md`](AGENTS.md). Project overview: [`README.md`](README.md).
+> **Snapshot as of 2026-04-19.** This file answers *"where is Wick right now?"* — current phase, recent work, test and build state, blockers, next steps. Updated after every significant session. Forward-looking roadmap: [`docs/planning/2026-04-11-roadmap-to-public-launch.md`](docs/planning/2026-04-11-roadmap-to-public-launch.md). Engineering standards: [`CONTRIBUTING.md`](CONTRIBUTING.md). Architecture: [`docs/architecture.md`](docs/architecture.md). Project overview: [`README.md`](README.md).
 
 ## What Wick is
 
@@ -89,7 +89,6 @@ None.
 ## References
 
 - [`docs/planning/2026-04-11-roadmap-to-public-launch.md`](docs/planning/2026-04-11-roadmap-to-public-launch.md) — forward-looking roadmap (phases 1–5)
-- [`AGENTS.md`](AGENTS.md) — cross-framework operating manual
 - [`README.md`](README.md) — project overview and positioning
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — human contributor onboarding
 - [`CHANGELOG.md`](CHANGELOG.md) — version-by-version change log

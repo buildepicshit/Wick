@@ -1,6 +1,6 @@
 # Contributing to Wick
 
-Thank you for your interest in contributing to Wick! This file is the human-contributor onboarding guide. For the full engineering standards, pull-request workflow, architectural rules, anti-patterns, and hard rules — **see [`AGENTS.md`](AGENTS.md)**, which is the canonical operating manual for both humans and AI agents working on this repo.
+Thank you for your interest in contributing to Wick. This file is the public contributor onboarding guide and the project’s source for engineering standards, pull-request workflow, code style, and hard rules.
 
 ## Getting Started
 
@@ -34,7 +34,7 @@ This command must stay green commit-to-commit on every branch. If your PR turns 
 
 | If you want to... | Read... |
 |---|---|
-| Understand engineering standards, PR workflow, worktree discipline, code style, hard rules | [`AGENTS.md`](AGENTS.md) |
+| Understand engineering standards, PR workflow, worktree discipline, code style, hard rules | This file |
 | See current project state, phase, recent work, blockers | [`STATUS.md`](STATUS.md) |
 | Get the project overview and positioning | [`README.md`](README.md) |
 | See release history | [`CHANGELOG.md`](CHANGELOG.md) |
@@ -42,7 +42,7 @@ This command must stay green commit-to-commit on every branch. If your PR turns 
 
 ## Quick Reference: Submitting a Pull Request
 
-The short version (see `AGENTS.md` for the full 13-step ceremony):
+The short version:
 
 1. **Open an issue first** for significant changes — discuss scope before coding.
 2. **Work in a sibling worktree**, not on `main` directly:

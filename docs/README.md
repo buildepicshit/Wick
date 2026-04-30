@@ -20,4 +20,4 @@
 
 ## Contributing
 
-Engineering rules, the canonical verification command, commit conventions, the worktree-per-PR workflow, and anti-patterns all live in the [root `AGENTS.md`](../AGENTS.md). For the contributor flow specifically, see [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+Engineering rules, the canonical verification command, commit conventions, and the worktree-per-PR workflow live in [`CONTRIBUTING.md`](../CONTRIBUTING.md).

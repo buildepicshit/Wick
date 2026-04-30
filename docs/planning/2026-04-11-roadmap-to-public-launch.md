@@ -49,8 +49,8 @@ Wick's value proposition is **Roslyn-enriched C# runtime exception telemetry for
 | Step | Scope |
 |---|---|
 | 3a | **Engineering excellence audit** — systematic review of the entire codebase against the studio engineering standards. Dispatched via the `pr-review-toolkit` agents (code-reviewer, silent-failure-hunter, type-design-analyzer, comment-analyzer, code-simplifier) running across the full source tree, not just recent diffs. Deliverable: a prioritized issue list with severity + location + fix, any blockers resolved before Phase 4. |
-| 3b | **Project accuracy audit** — cross-reference STATUS.md, AGENTS.md, this roadmap, and the actual code. Verify every claim matches reality. Find and fix any drift. |
-| 3c | **Doc refresh for public audience** — README rewrite for public consumption (currently internal prose), AGENTS.md audit and update, CONTRIBUTING.md review, installation docs, CLI reference, env var reference (`WICK_GROUPS`, etc.), pillar reference, per-tool reference table. This is the first impression a public visitor gets; it matters. |
+| 3b | **Project accuracy audit** — cross-reference STATUS.md, CONTRIBUTING.md, this roadmap, and the actual code. Verify every claim matches reality. Find and fix any drift. |
+| 3c | **Doc refresh for public audience** — README rewrite for public consumption, contributor-guide review, installation docs, CLI reference, env var reference (`WICK_GROUPS`, etc.), pillar reference, per-tool reference table. This is the first impression a public visitor gets; it matters. |
 | 3d | **Security pass** — RCE mitigation for `scene_add_node` polymorphic class instantiation (Coding-Solo's known hole, we must not inherit). Input validation sweep on all MCP tool parameters. Subprocess injection audit in `ProcessGameLauncher` (shell metacharacters in paths, env vars, etc.). Secret-leak audit in error messages and log output. |
 | 3e | **License + attribution audit** — `LICENSE` accurate, `ATTRIBUTION.md` covers every borrowed idea (GoPeak concept credit, Coding-Solo curation principle credit, LuoxuanLove `runtime_diagnose` pattern credit), SPDX headers on source files where appropriate. |
 
