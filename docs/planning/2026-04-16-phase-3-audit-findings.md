@@ -9,17 +9,17 @@
 
 **Do not tag `v0.1.0` yet.**
 
-Clean on OSS hygiene (no leaks of personal paths, old repo names, AI-attribution footers, or credentials). The blockers are **honesty-of-surface** issues — the tool advertises features it silently does not deliver. These are embarrassing on day one of public traction and should be fixed before the tag goes out.
+Clean on OSS hygiene (no credentials or private path references found). The blockers are **honesty-of-surface** issues — the tool advertises features it silently does not deliver. These are embarrassing on day one of public traction and should be fixed before the tag goes out.
 
 ## Audit scope
 
-Five parallel agent passes over the full source tree (not just recent diffs):
+Five focused audit passes covered the full source tree (not just recent diffs):
 
-| Pass | Agent | Focus |
+| Pass | Focus Area | Focus |
 |---|---|---|
-| 1 | `pr-review-toolkit:code-reviewer` | Style, pattern consistency, dead code, contributor-standard adherence |
-| 2 | `pr-review-toolkit:silent-failure-hunter` | Swallowed exceptions, misleading fallbacks, error-as-envelope anti-pattern |
-| 3 | `pr-review-toolkit:type-design-analyzer` | Public-surface type quality, invariants, primitive obsession |
+| 1 | Code quality | Style, pattern consistency, dead code, contributor-standard adherence |
+| 2 | Failure semantics | Swallowed exceptions, misleading fallbacks, error-as-envelope anti-pattern |
+| 3 | Type design | Public-surface type quality, invariants, primitive obsession |
 | 4 | Security explorer | Subprocess injection, path traversal, RCE, secret leaks |
 | 5 | OSS hygiene + doc drift explorer | Personal info leaks, doc accuracy, OSS template quality |
 
@@ -29,7 +29,7 @@ Covered: 108 `.cs` files across 6 `src/` projects. Test projects spot-checked.
 
 ### 1. Old-name leaks on the wire
 
-- `src/Wick.Providers.Godot/GodotDapClient.cs:40` — DAP handshake sends `clientID = "sharp-peak"`. Every Godot debugger session announces itself as SharpPeak on the protocol.
+- `src/Wick.Providers.Godot/GodotDapClient.cs:40` — DAP handshake sends `clientID = "sharp-peak"`. Every Godot debugger connection announces itself as SharpPeak on the protocol.
 
 ### 2. False feature claims (documentation-accuracy violations)
 
@@ -121,7 +121,7 @@ Secondary: `BuildSeverity` / `BuildTarget` / `WickBridgeErrorCodes` are stringly
 - `src/Wick.Providers.Godot/InProcessBridgeClient.cs:105-173` — typed `BridgeResponse` with per-exception error-code mapping. This is the pattern every MCP tool response should follow.
 - `src/Wick.Providers.CSharp/RoslynWorkspaceService.cs` — `catch (Exception ex) when (ex is not OutOfMemoryException)` + source-generated `[LoggerMessage]` partials. Best catch discipline in the codebase.
 - `LICENSE`, `ATTRIBUTION.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `.github/` templates, CI workflow — all solid, professional, no private references.
-- No leaks of personal paths, old repo names, or AI-attribution footers in committed files.
+- No credentials or private path references found in committed files.
 
 ## Suggested remediation order
 
@@ -132,6 +132,5 @@ Secondary: `BuildSeverity` / `BuildTarget` / `WickBridgeErrorCodes` are stringly
 
 ## References
 
-- Audit source: five parallel agent passes, transcripts at `/tmp/claude-1000/-var-home-hasnobeef/913b4deb-342c-4998-9c76-db901519e5b6/tasks/` (ephemeral — summarised here)
 - Upstream roadmap: [`2026-04-11-roadmap-to-public-launch.md`](./2026-04-11-roadmap-to-public-launch.md)
 - Studio engineering standards: [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md) rules 1–13 + Anti-Patterns + Hard Rules

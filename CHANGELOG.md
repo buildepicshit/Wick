@@ -28,21 +28,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   targets — neither is a valid Wick target. Public testing routes Wick
   at any real Godot C# codebase. First pass landed: see
   `docs/public-testing/2026-04-15-bes-splash-3d-pass.md` (BES Studios
-  splash logo, 13 verified `mcp__wick__*` calls over a ~60h Claude
-  Code session, runtime + build pillars exercised, 6 honest findings
+  splash logo, 13 verified Wick tool calls over a multi-day public-test
+  pass, runtime + build pillars exercised, 6 honest findings
   including that `runtime_diagnose` was never reached for in real use).
 - **v0.6 roadmap → v1.x hardening** in SECURITY.md and CHANGELOG. The
   GDScript-side editor + runtime bridge auth (ports 6505 / 7777) is
   reframed as v1.x post-release hardening rather than "deferred from
   v1.0" — same posture every other Godot MCP server in the category
   ships with at v1.0; the in-process bridge ships authenticated.
+- **Public documentation scrub** removes internal evidence paths and
+  session-provenance details from planning/status docs while preserving the
+  public release, audit, and testing facts.
+
+### Changed — maintenance
+
+- Coordinated the `Microsoft.Extensions.*` central package versions at
+  `10.0.7` to avoid partial Dependabot bumps producing restore downgrade
+  failures.
+- Updated GitHub artifact actions used by CI/release workflows:
+  `actions/upload-artifact` to `v7` and `actions/download-artifact` to `v8`.
 
 ### Pending
 
 - Second public-test pass against a NuGet-installed `Wick.Runtime`
   target to exercise the in-process Tier 2 bridge and the `csharp`
   pillar (the bes-splash-3d pass on 2026-04-15 covered runtime + build
-  pillars only). Candidate cloned at `/buildepicshit/wick-public-test-targets/godot-demo-projects/mono/dodge_the_creeps/`.
+  pillars only). Candidate: the official Godot Dodge the Creeps C#
+  tutorial project.
 - Discoverability fixes from the bes-splash-3d pass — `runtime_diagnose`
   description rewrite (P1) and in-process bridge nudge in
   `runtime_status` (P2).
@@ -51,8 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] — 2026-04-19
 
 First stable release. Resolves the post-v0.5 external engineering
-audit (canonical report at `/buildepicshit/analysis/reports/Wick-analysis.md`):
-1 P0 + every P1 + most P2/P3 closed; 240/240 tests green on
+audit: 1 P0 + every P1 + most P2/P3 closed; 240/240 tests green on
 ubuntu/windows/macos; 0 warnings; first NuGet publication of
 `Wick.Runtime`.
 
@@ -88,13 +99,13 @@ ubuntu/windows/macos; 0 warnings; first NuGet publication of
 - `runtime_launch_game` previously returned `Status: "running"` with no
   `Error` even when `WICK_GODOT_BIN` was unset or pointed at a missing
   binary; the launched process exited immediately, no exceptions were
-  captured, and the agent's next `runtime_diagnose` returned
+  captured, and a subsequent `runtime_diagnose` returned
   `HasIssues: false`. The user concluded their game was healthy when
   nothing ever ran. Now: `runtime_launch_game` pre-flights the binary
   and returns `Status: "godot_binary_not_found"` with an actionable
   `Error`. `runtime_status` surfaces `GodotBinaryConfigured` /
   `GodotBinaryResolved` / `GodotBinaryFound` / `GodotBinaryError` for
-  agent-driven preflight.
+  client-side preflight.
 - `WickBridgeErrorCodeParsing.Parse` collapsed unknown wire codes into
   `Internal`, making forward-compat drift indistinguishable from genuine
   server failures in logs / triage. Now maps unknown codes to `Unknown`.
@@ -231,7 +242,7 @@ Phase 1 feature completeness. All six sub-specs shipped. 215 tests passing.
 
 - Sub-spec A — Runtime exception pipeline: GodotExceptionParser (stderr-based), ExceptionEnricher
   (Roslyn source mapping), ExceptionPipeline (IHostedService), BridgeExceptionSource (TCP bridge
-  channel), ProcessExceptionSource (Tier 1 agent-launched stderr capture), thread-safe
+  channel), ProcessExceptionSource (Tier 1 Wick-launched stderr capture), thread-safe
   ExceptionBuffer and LogBuffer ring buffers (PRs #19–#24)
 - Sub-spec B — Static tool group system: 5-pillar model (editor, scene, csharp, runtime, build),
   ToolGroupResolver with CLI/env precedence, 5 runtime MCP tools (status, get_log_tail,
@@ -250,7 +261,7 @@ Phase 1 feature completeness. All six sub-specs shipped. 215 tests passing.
 ### Changed
 
 - Renamed SharpPeak to Wick across all namespaces, package IDs, env vars, and docs (PR #26)
-- Descoped scene pillar from 28 to 7 tools (strategic focus on what agents actually need)
+- Descoped scene pillar from 28 to 7 tools (strategic focus on what AI coding assistants actually need)
 - Reshaped DefaultToolGroups into 5-pillar model; split CSharpTools into CSharpAnalysisTools +
   BuildTools
 - Deleted dead ToolGroupRegistry after static group refactor
