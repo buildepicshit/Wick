@@ -84,3 +84,9 @@ __pycache__/
 /lsp_out.txt
 /tests/log.txt
 tests/**/build_error_*.txt
+
+AGENT_INBOX.md
+
+AGENT_FEEDBACK.md
+
+SESSION_JOURNAL.md
