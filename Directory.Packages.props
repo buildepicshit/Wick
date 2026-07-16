@@ -9,7 +9,18 @@
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.7" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8" />
-    <PackageVersion Include="StreamJsonRpc" Version="2.25.29" />
+    <!-- StreamJsonRpc stays on the 2.24 line: 2.25.29 (tried in #83)
+         introduces a nondeterministic macOS-only hang in the
+         integration-test Test step (3 of 4 CI runs, 2026-07-16). The
+         MessagePack advisories are cleared instead by the direct
+         transitive pins below; drop the pins when a StreamJsonRpc
+         2.24.x/2.25.x release floors them AND passes macOS CI. -->
+    <PackageVersion Include="StreamJsonRpc" Version="2.24.92" />
+    <!-- Direct pins: lift StreamJsonRpc 2.24.92's vulnerable transitive
+         floors (MessagePack 2.5.198 — GHSA-hv8m-jj95-wg3x high + 8
+         moderates; Nerdbank.MessagePack 1.1.62 — 2 moderates). -->
+    <PackageVersion Include="MessagePack" Version="2.5.302" />
+    <PackageVersion Include="Nerdbank.MessagePack" Version="1.2.36" />
   </ItemGroup>
   <!-- Roslyn (C# provider) -->
   <ItemGroup>
