@@ -16,6 +16,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
 
     steps:
       - uses: actions/checkout@v6
@@ -34,7 +35,7 @@ jobs:
         run: dotnet build Wick.slnx --configuration Release --no-restore -maxcpucount:1
 
       - name: Test
-        run: dotnet test Wick.slnx --configuration Release --no-build --no-restore -maxcpucount:1 --logger "trx" --results-directory artifacts/TestResults
+        run: dotnet test Wick.slnx --configuration Release --no-build --no-restore -maxcpucount:1 --logger "trx" --results-directory artifacts/TestResults --blame-hang --blame-hang-timeout 8m --blame-hang-dump-type mini
 
       - name: Upload test results
         if: always()
