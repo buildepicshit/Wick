@@ -16,6 +16,11 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="StreamJsonRpc" />
+    <!-- Direct references so the patched versions pinned centrally win
+         over StreamJsonRpc 2.24.92's vulnerable transitive floors
+         (NU1902/NU1903 audit-as-error). -->
+    <PackageReference Include="MessagePack" />
+    <PackageReference Include="Nerdbank.MessagePack" />
   </ItemGroup>
 
 </Project>
