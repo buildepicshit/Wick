@@ -8,7 +8,7 @@
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.7" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
     <!-- StreamJsonRpc stays on the 2.24 line: 2.25.29 (tried in #83)
          introduces a nondeterministic macOS-only hang in the
          integration-test Test step (3 of 4 CI runs, 2026-07-16). The
