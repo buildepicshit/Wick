@@ -15,6 +15,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.NET.StringTools" VersionOverride="18.9.6" />
     <PackageReference Include="StreamJsonRpc" />
     <!-- Direct references so the patched versions pinned centrally win
          over StreamJsonRpc 2.24.92's vulnerable transitive floors
